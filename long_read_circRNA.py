@@ -1,5 +1,7 @@
 import argparse
 import sys
+import os
+from pathlib import Path
 import subprocess
 
 class ArgumentCaller():
@@ -40,12 +42,67 @@ Available subcommands:
     def run(self):
         parser = argparse.ArgumentParser(
             description="Run the program for detecting circRNAs in nanopore data",
-            usage="long_read_circRNA run [args]"
+            usage="long_read_circRNA run sample [args]"
         )
         
-        args = parser.parse_args(sys.argv[2:])
+        parser.add_argument('sample', help="Provide a sample input .fq.gz file that should be processed by the tool")
+        parser.add_argument('--reference-path', default="./data", help="Provide a path for where the reference data is located.")
+        parser.add_argument('--species', default='human', choices=['human', 'mouse'])
         
-        # Code for starting the detection
+        args = parser.parse_args(sys.argv[2:])
+    
+        reference_path = args.reference_path
+        species = args.species
+        
+        # Check if reference_path exists
+        if not os.path.exists(reference_path):
+            raise Exception("'{}' does not exists! Please make sure that the path is written correctly".format(reference_path))
+        # Check if reference_path is a directory:
+        if not os.path.isdir(reference_path):
+            raise Exception("'{}' is not a directory! Please provide a directory that contains the reference data".format(reference_path))
+        # Check if reference_path contains species in the end
+        if os.path.basename(reference_path)==species:
+            raise Exception("Looks like you have provided the direct path to the species reference directory '{}'. Please simply provide data directory '{}'".format(
+                reference_path, os.path.dirname(reference_path)
+            ))
+        # Check if reference_path + species exists
+        if not os.path.exists(os.path.join(reference_path, species)):
+            raise Exception("The species subpath {} in the directory {} does not exists".format(species, reference_path))
+        # Check if the reference_path + species is a directory
+        if not os.path.isdir(os.path.join(reference_path, species)):
+            raise Exception("The species subpath {} in the directory {} is not a directory!".format(species, reference_path))
+        
+        # Check if sample exists
+        if not os.path.exists(args.sample):
+            raise Exception("Sample file '{}' does not exist!".format(args.sample))
+        # Check if sample ends with ".fq.gz"
+        if not args.sample.endswith(".fq.gz"):
+            raise Exception("Sample file '{}' does not end with '.fq.gz'".format(args.sample))
+        # Prepare sample_path and sample_name
+        reference_path = str(Path(reference_path).resolve())
+        sample_path = str(Path(os.path.dirname(args.sample)).resolve())
+        sample_name = os.path.basename(args.sample).replace('.fq.gz', '')
+        
+        if not os.path.exists(os.path.join(os.getcwd(), "scripts")) and not os.path.exists(os.path.join(os.getcwd(), "long_read_circRNA.py")):
+            raise Exception("Please only run this script in the original repository .")
+        
+        print()
+        print("\033[1m Starting process with sample: {}\033[0m".format(sample_name))
+        print("\033[1m Reference path: {}\033[0m".format(reference_path))
+        print("\033[1m Sample path: {}\033[0m".format(sample_path))
+        print("\033[1m Species: {}\033[0m".format(sample_name))
+        
+        original_directory = os.getcwd()
+        
+        # Main process for circRNA detection
+        subprocess.run(["bash", "scripts/blat_nanopore_v5.5.sh", sample_path, sample_name, species, reference_path])
+        
+        print("\033[1mcircRNA detection has finished\033[0m")
+        print("\033[1mStarting the novel exon and alternative usage script\033[0m")
+        
+        os.chdir(original_directory)
+        
+        subprocess.run(["bash", "scripts/novel_exons_and_alternative_usage_v7.0.sh", sample_name, species, reference_path])
     
     def download_data(self):
         parser = argparse.ArgumentParser(

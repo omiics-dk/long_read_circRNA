@@ -12,43 +12,41 @@
 data_folder=$1
 sample=$2
 species=$3
+reference_path=$4
 
-
+scriptFolder=$PWD/scripts
 mkdir $sample
+cd $sample
 
-# change directory to the local scratch-directory, and run:
-cd /scratch/$SLURM_JOBID
+#OriginalScriptFolder=~/long_read_circRNA_v2/scripts
+#mkdir scripts
 
-OriginalScriptFolder=~/long_read_circRNA_v2/scripts
-mkdir scripts
-scriptFolder=/scratch/$SLURM_JOBID/scripts
-cp -r $OriginalScriptFolder/* $scriptFolder
-
+#cp -r $OriginalScriptFolder/* $scriptFolder
 
 
 if [ "$species" = "human" ] ; then
-fa=~/long_read_circRNA_v2/data/human/hg19.fa
-mRNA=~/long_read_circRNA_v2/data/human/Human_refFlat_hg19_Oct2018.unique.merge.bed
-exon=~/long_read_circRNA_v2/data/human/Human_refFlat_exon_hg19_Oct2018.merge.bed
-single_exon=~/long_read_circRNA_v2/data/human/Human_refFlat_exon_hg19_Oct2018.sort.bed
-est=~/long_read_circRNA_v2/data/human/UCSC-EST-exons_hg19_09-2018.bed
-circBase=~/long_read_circRNA_v2/data/human/hsa_circRNA_complete.hg19.unique.sort.length.bed
-circAtlas=~/long_read_circRNA_v2/data/human/circAtlas2.0_June2019_human_hg19_circRNA.0-based.bed
-CIRCpedia=~/long_read_circRNA_v2/data/human/CIRCpedia_v2_June2019_human_hg19_All_circRNA.unique.bed
-genomeSize=~/long_read_circRNA_v2/data/human/hg19.chrom.sizes
+fa=$reference_path/human/hg19.fa
+mRNA=$reference_path/human/Human_refFlat_hg19_Oct2018.unique.merge.bed
+exon=$reference_path/human/Human_refFlat_exon_hg19_Oct2018.merge.bed
+single_exon=$reference_path/human/Human_refFlat_exon_hg19_Oct2018.sort.bed
+est=$reference_path/human/UCSC-EST-exons_hg19_09-2018.bed
+circBase=$reference_path/human/hsa_circRNA_complete.hg19.unique.sort.length.bed
+circAtlas=$reference_path/human/circAtlas2.0_June2019_human_hg19_circRNA.0-based.bed
+CIRCpedia=$reference_path/human/CIRCpedia_v2_June2019_human_hg19_All_circRNA.unique.bed
+genomeSize=$reference_path/human/hg19.chrom.sizes
 circRNA_prefix=hsa_circ_
 fi
 
 if [ "$species" = "mouse" ] ; then
-fa=~/long_read_circRNA_v2/data/mouse/Mus_musculus.GRCm38.87.chr-fix.fa
-mRNA=~/long_read_circRNA_v2/data/mouse/Mouse_refFlat_mm10_Oct2018.unique.merge.bed
-exon=~/long_read_circRNA_v2/data/mouse/Mouse_refFlat_exon_mm10_Oct2018.merge.bed
-single_exon=~/long_read_circRNA_v2/data/mouse/Mouse_refFlat_exon_mm10_Oct2018.sort.bed
-est=~/long_read_circRNA_v2/data/mouse/UCSC-EST-exons_mm10_09-2018.bed
-circBase=~/long_read_circRNA_v2/data/mouse/mmu_circRNA_complete.mm10lift.sort.length.bed
-circAtlas=~/long_read_circRNA_v2/data/mouse/circAtlas2.0_Aug2019_mouse_mm10_circRNA.0-based.bed
-CIRCpedia=~/long_read_circRNA_v2/data/mouse/CIRCpedia_v2_June2019_mouse_mm10_All_circRNA.unique.bed
-genomeSize=~/long_read_circRNA_v2/data/mouse/mm10.chrom.sizes
+fa=$reference_path/mouse/Mus_musculus.GRCm38.87.chr-fix.fa
+mRNA=$reference_path/mouse/Mouse_refFlat_mm10_Oct2018.unique.merge.bed
+exon=$reference_path/mouse/Mouse_refFlat_exon_mm10_Oct2018.merge.bed
+single_exon=$reference_path/mouse/Mouse_refFlat_exon_mm10_Oct2018.sort.bed
+est=$reference_path/mouse/UCSC-EST-exons_mm10_09-2018.bed
+circBase=$reference_path/mouse/mmu_circRNA_complete.mm10lift.sort.length.bed
+circAtlas=$reference_path/mouse/circAtlas2.0_Aug2019_mouse_mm10_circRNA.0-based.bed
+CIRCpedia=$reference_path/mouse/CIRCpedia_v2_June2019_mouse_mm10_All_circRNA.unique.bed
+genomeSize=$reference_path/mouse/mm10.chrom.sizes
 circRNA_prefix=mmu_circ_
 fi
 
@@ -79,7 +77,7 @@ date
 echo "Mapping with pblat - parallelized blat with multi-threads support (http://icebert.github.io/pblat/)"
 echo "lower case sequences in the genome file are masked out"
 echo "Showing a dot for every 50k sequences processed"
-$scriptFolder/pblat/icebert-pblat-e05e284/pblat  -threads=8 -trimT -dots=50000 -mask=lower $fa $sample.fa $sample.psl
+pblat  -threads=8 -trimT -dots=50000 -mask=lower $fa $sample.fa $sample.psl
 echo "Blat done"
 date
 
@@ -91,8 +89,8 @@ cat $sample.psl | awk '{print $10}' | sort | uniq -c | sort -nrk 1,1 > mappings_
 cat mappings_per_read.txt | awk '{print $1}' | uniq -c | sort -nrk 1,1 > $sample.histogram_number_of_genomic_hits_per_read.txt
 cat $sample.psl | perl $scriptFolder/psl2bed12.pl | sortBed > $sample.psl.bed
 bedtools bedtobam -i $sample.psl.bed -bed12 -g $genomeSize > $sample.bam
-~/long_read_circRNA_v2/scripts/samtools-0.1.18/samtools sort $sample.bam $sample.sort
-~/long_read_circRNA_v2/scripts/samtools-0.1.18/samtools index $sample.sort.bam
+samtools sort $sample.bam > $sample.sort.bam
+samtools index $sample.sort.bam
 rm $sample.bam
 
 echo
@@ -131,8 +129,8 @@ grep Potential_multi-round_circRNA $sample.scan.psl >> $sample.scan.Potential_mu
 ## converting psl to bed12
 cat $sample.scan.Potential_multi-round_circRNA.psl | perl $scriptFolder/psl2bed12.pl | sortBed > $sample.scan.Potential_multi-round_circRNA.psl.bed
 bedtools bedtobam -i $sample.scan.Potential_multi-round_circRNA.psl.bed -bed12 -g $genomeSize > $sample.scan.Potential_multi-round_circRNA.bam
-~/long_read_circRNA_v2/scripts/samtools-0.1.18/samtools sort $sample.scan.Potential_multi-round_circRNA.bam $sample.scan.Potential_multi-round_circRNA.sort
-~/long_read_circRNA_v2/scripts/samtools-0.1.18/samtools index $sample.scan.Potential_multi-round_circRNA.sort.bam
+samtools sort $sample.scan.Potential_multi-round_circRNA.bam > $sample.scan.Potential_multi-round_circRNA.sort.bam
+samtools index $sample.scan.Potential_multi-round_circRNA.sort.bam
 # Making a special file to show how many rounds each read takes
 cat $sample.scan.Potential_multi-round_circRNA.psl.bed | sed 's/~/\t/g' | awk 'OFS="\t"{print $4,$2,$3,$1,$6,$7}' | sortBed | awk 'OFS="\t"{print $1"~"$4,$2,$3,$4,$5,$6}' | bedtools merge > $sample.scan.Potential_multi-round_circRNA.psl.merge.bed
 cat $sample.scan.Potential_multi-round_circRNA.psl.bed | sed 's/~/\t/g' | awk 'OFS="\t"{print $4,$2,$3,$1,$6,$7}' | sortBed | awk 'OFS="\t"{print $1"~"$4,$2,$3,$4,$5,$6}' | bedtools coverage -counts -a $sample.scan.Potential_multi-round_circRNA.psl.merge.bed -b - > temp.$sample.multi-round.count.txt
@@ -141,9 +139,9 @@ cat temp.$sample.multi-round.count.txt | sed 's/~/\t/g' | awk 'OFS="\t"{print $2
 cat $sample.scan.Potential_multi-round_circRNA.psl.annot.bed | awk '{print $NF}' | sort | uniq -c | sort -nrk 1,1 > $sample.scan.Potential_multi-round_circRNA.psl.annot.count.txt
 cat $sample.scan.Potential_multi-round_circRNA.psl.annot.bed | awk '{print $4}' | grep -v Read_name > $sample.temp.read_names
 #grep --no-group-separator -A1 -f $sample.temp.read_names $sample.fa > $sample.Potential_multi-round_circRNA.fa
-~/long_read_circRNA_v2/scripts/samtools-0.1.18/samtools faidx $sample.fa
+samtools faidx $sample.fa
 echo "Using samtools to make Potential_multi-round_circRNA fasta files for sample: "$sample.fa
-xargs ~/long_read_circRNA_v2/scripts/samtools-0.1.18/samtools faidx $sample.fa < $sample.temp.read_names > $sample.Potential_multi-round_circRNA.fa
+xargs samtools faidx $sample.fa < $sample.temp.read_names > $sample.Potential_multi-round_circRNA.fa
 rm temp.$sample.multi-round.count.txt $sample.temp.read_names
 
 echo
@@ -304,8 +302,6 @@ rm $sample.scan.Potential_multi-round_circRNA.sort.bam
 rm base_list_exon-match.bed no_exon_match_reads.bed circBase.no_exon_match_reads_circIDs.txt circAtlas.no_exon_match_reads_circIDs.txt CIRCpedia.no_exon_match_reads_circIDs.txt
 #rm base_list_no-exon.cirBaseID.annot.prefilter.bed
 rm mappings_per_read.txt $sample.scan.psl $sample.circBase_no_exon_match_reads.bed #$sample.base_list_no-exon.cirBaseID.annot.bed
-
-mv * $SLURM_SUBMIT_DIR/$sample
 
 echo
 date
