@@ -117,8 +117,8 @@ grep circRNA $sample.scan.psl >> $sample.scan.circRNA.psl
 ## converting psl to bed12
 cat $sample.scan.circRNA.psl | perl $scriptFolder/psl2bed12.pl | sortBed > $sample.scan.circRNA.psl.bed
 bedtools bedtobam -i $sample.scan.circRNA.psl.bed -bed12 -g $genomeSize > $sample.scan.circRNA.bam
-#DELETE ~/long_read_circRNA_v2/scripts/samtools-0.1.18/samtools sort $sample.scan.circRNA.bam $sample.scan.circRNA.sort
-#DELETE ~/long_read_circRNA_v2/scripts/samtools-0.1.18/samtools index $sample.scan.circRNA.sort.bam
+samtools sort $sample.scan.circRNA.bamb > $sample.scan.circRNA.sort.bam
+samtools index $sample.scan.circRNA.sort.bam
 
 echo
 date

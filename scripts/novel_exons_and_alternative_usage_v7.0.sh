@@ -11,54 +11,64 @@ export PATH=~/omiicsTransfer/software/bedtools2/bin/:$PATH
 
 sample=$1
 organism=$2
+reference_path=$3
+
+scriptFolder=$PWD/scripts
 
 echo $sample
 echo $organism
 echo
+date
 
 cd $sample
 
 # v6.1: bug fix and vastly improved method for generation of circRNA_exon_usage.txt
 # v7.0: Added the script previously called extra_stuff_v2.sh to this script, so now intron analyses, and phasing is done here
 
-#if [ organism == "human" ]
-#then
+if [ $organism == "human" ]
+then
 ### Human
-#genomeSize=/home/mtv/software/IGVTools/genomes/hg19.chrom.sizes
-#fa=/home/mtv/faststorage/genomes/human_hg19_july_2010/hg19.fa
-#exon_refseq=/home/mtv/faststorage/backup/external_datasets/refFlat_bed/Human_refFlat_exon_hg19_Oct2018.sort.bed
-##exon=/home/mtv/faststorage/genomes/human_hg19_july_2010/gencode.v29lift37.annotation.gffread.exon.merge.bed
-#exon_original=/home/mtv/faststorage/genomes/human_hg19_july_2010/gencode.v29lift37.annotation.gffread.exon.merge.bed
-#exon_full=/home/mtv/faststorage/genomes/human_hg19_july_2010/gencode.v29lift37.annotation.gffread.exon.bed
-#gene=/home/mtv/faststorage/genomes/human_hg19_july_2010/gencode.v29lift37.annotation.gffread.bed
-#intron_ucsc=/home/mtv/faststorage/genomes/human_hg19_july_2010/hg19_ucsc_Intron_Gencode_V34lift37.bed
-#fi
-#elif [ organism == "mouse" ]
-#then
-## Mouse
-genomeSize=/home/mtv/software/IGVTools/genomes/mm10.chrom.sizes
-fa=/home/mtv/omiicsTransfer/genomes/mm10_GRCm38.p6/GRCm38.p6.genome_simple.fa
-exon_refseq=/home/mtv/faststorage/backup/external_datasets/refFlat_bed/Mouse_refFlat_exon_mm10_Oct2018.sort.bed
-exon_original=/home/mtv/omiicsTransfer/genomes/mm10_GRCm38.p6/gencode.vM25.annotation.gffread.exon.merge.bed
-exon_full=/home/mtv/omiicsTransfer/genomes/mm10_GRCm38.p6/gencode.vM25.annotation.gffread.exon.bed
-gene=/home/mtv/omiicsTransfer/genomes/mm10_GRCm38.p6/gencode.vM25.annotation.gffread.bed
-intron_ucsc=/home/mtv/omiicsTransfer/genomes/mm10_GRCm38.p6/mm10_ucsc_Intron_Gencode_VM23.bed
-#fi
+genomeSize=$reference_path/human/hg19.chrom.sizes
+fa=$reference_path/human/hg19.fa
+exon_refseq=$reference_path/human/Human_refFlat_exon_hg19_Oct2018.sort.bed
+#exon=$reference_path/human/gencode.v29lift37.annotation.gffread.exon.merge.bed
+exon_original=$reference_path/human/gencode.v29lift37.annotation.gffread.exon.merge.bed
+exon_full=$reference_path/human/gencode.v29lift37.annotation.gffread.exon.bed
+gene=$reference_path/human/gencode.v29lift37.annotation.gffread.bed
+intron_ucsc=$reference_path/human/hg19_ucsc_Intron_Gencode_V34lift37.bed
+elif [ $organism == "mouse" ]
+then
+### Mouse
+genomeSize=$reference_path/human/mm10.chrom.sizes
+fa=$reference_path/human/GRCm38.p6.genome_simple.fa
+exon_refseq=$reference_path/human/Mouse_refFlat_exon_mm10_Oct2018.sort.bed
+exon_original=$reference_path/human/gencode.vM25.annotation.gffread.exon.merge.bed
+exon_full=$reference_path/human/gencode.vM25.annotation.gffread.exon.bed
+gene=$reference_path/human/mm10_GRCm38.p6/gencode.vM25.annotation.gffread.bed
+intron_ucsc=$reference_path/human/mm10_ucsc_Intron_Gencode_VM23.bed
+fi
+
+echo "Reformating annotation files"
+date
 
 ## This reformats the annotation file to include genome region in the name, which makes the output better in the end
 cat $exon_original | sed 's/;[[:graph:]]*//g' | awk 'OFS="\t"{print $1,$2,$3,$4"_"$1":"$2"-"$3,0,$6}'  > exon_annotation.reformat.bed
+date
 exon=exon_annotation.reformat.bed
 cat $exon_full | sed 's/;[[:graph:]]*//g' | awk 'OFS="\t"{print $1,$2,$3,$4"_"$1":"$2"-"$3,0,$6}' | sed 's/:/\t/g' | awk 'OFS="\t"{print $1,$2,$3,"exon",$5,$7}' | sort -k 5,5 | sort -k 1 | uniq > exon_specific.reformat.bed
 exon_all=exon_specific.reformat.bed
 
+date
+echo
+echo "Producing summary of exons"
 
 bedtools bed12tobed6 -i $sample.scan.circRNA.psl.bed | awk 'OFS="\t"{print $4,$2,$3,$1,$5,$6}' | grep -v chrM | sortBed > $sample.scan.circRNA.psl.split.bed
-bedtools merge -s -d 10 -c 4 -o distinct -i $sample.scan.circRNA.psl.split.bed | awk 'OFS="\t"{print $5,$2,$3,$3-$2,$4,$1}' | sed 's/~/\t/g' | awk 'OFS="\t"{print $1,$2,$3,$6"~"$1"~"$2"~"$3"~"$5,$4,$5}' > $sample.scan.circRNA.psl.split.merge.bed
+bedtools merge -s -d 10 -c 4,6 -o distinct -i $sample.scan.circRNA.psl.split.bed | awk 'OFS="\t"{print $4,$2,$3,$3-$2,$1,$5}' | sed 's/~/\t/g' | awk 'OFS="\t"{print $1,$2,$3,$5"~"$1"~"$2"~"$3"~"$7,$4,$5}' > $sample.scan.circRNA.psl.split.merge.bed
 #cat $genomeSize
 bedtools flank -g $genomeSize -b 2 -i $sample.scan.circRNA.psl.split.merge.bed > $sample.scan.circRNA.psl.split.merge.flank2.bed
-bedtools getfasta -name -fullHeader -fi $fa -bed $sample.scan.circRNA.psl.split.merge.flank2.bed -fo $sample.scan.circRNA.psl.split.merge.flank2.fa
-cat  $sample.scan.circRNA.psl.split.merge.flank2.fa | sed ':a;N;$!ba;s/+\n/+\t/g' | sed ':a;N;$!ba;s/-\n/-\t/g' | sed 's/^>//g' | perl /home/mtv/backup/my-homemade-scripts/Nanopore/flank2_combine.pl > $sample.scan.circRNA.psl.split.merge.flank2.fa.bed
-cat  $sample.scan.circRNA.psl.split.merge.flank2.fa | sed ':a;N;$!ba;s/+\n/+\t/g' | sed ':a;N;$!ba;s/-\n/-\t/g' | sed 's/^>//g' | perl /home/mtv/backup/my-homemade-scripts/Nanopore/flank2_combine.pl | awk 'OFS="\t"{print $6,$7}' | sort | uniq -c | sort -nrk 1,1 > $sample.scan.circRNA.psl.split.merge.flank2.fa.bed.count
+bedtools getfasta -nameOnly -fi $fa -bed $sample.scan.circRNA.psl.split.merge.flank2.bed -fo $sample.scan.circRNA.psl.split.merge.flank2.fa
+cat $sample.scan.circRNA.psl.split.merge.flank2.fa | sed ':a;N;$!ba;s/+\n/+\t/g' | sed ':a;N;$!ba;s/-\n/-\t/g' | sed 's/^>//g' | perl $scriptFolder/flank2_combine.pl > $sample.scan.circRNA.psl.split.merge.flank2.fa.bed
+cat $sample.scan.circRNA.psl.split.merge.flank2.fa | sed ':a;N;$!ba;s/+\n/+\t/g' | sed ':a;N;$!ba;s/-\n/-\t/g' | sed 's/^>//g' | perl $scriptFolder/flank2_combine.pl | awk 'OFS="\t"{print $6,$7}' | sort | uniq -c | sort -nrk 1,1 > $sample.scan.circRNA.psl.split.merge.flank2.fa.bed.count
 cat $sample.scan.circRNA.psl.split.merge.flank2.fa.bed | grep -P "AGGT$" > $sample.scan.circRNA.psl.split.merge.flank2.AGGT.bed
 cat $sample.scan.circRNA.psl.split.merge.flank2.fa.bed | grep -P "ACCT$" > $sample.scan.circRNA.psl.split.merge.flank2.ACCT.bed
 cat $sample.scan.circRNA.psl.split.merge.flank2.AGGT.bed | awk 'OFS="\t"{print $1,$2,$3}' | sort -nk 3,3 | sort -nk 2,2 | sort -k 1,1 | uniq -c | awk 'OFS="\t"{print $2,$3,$4,"novelExon",$1,"+"}' | sortBed > $sample.scan.circRNA.psl.split.merge.flank2.posExons.bed
@@ -119,11 +129,11 @@ rm $sample.scan.circRNA.psl.annot.combine.sort.txt
 
 echo "Starting the list with number of used exons for each circRNA"
 date
-mkdir /home/mtv/temp/job.$SLURM_JOBID
+tmp_dir=$(mktemp -d -t job-XXXXXXXXXX)
 cat $sample.scan.circRNA.psl.genomic-exons.annot.bed | awk 'OFS="\t"{print $13,$14,$15}' | sort -k 1,1 -T /home/mtv/temp/job.$SLURM_JOBID > temp1
-cat temp1 | sort -k 2,2 -T /home/mtv/temp/job.$SLURM_JOBID > temp2
-cat temp2 | sort -k 3,3 -T /home/mtv/temp/job.$SLURM_JOBID | uniq -c > $sample.scan.circRNA.psl.genomic-exons.annot.uniq.bed
-rm -r temp1 temp2 /home/mtv/temp/job.$SLURM_JOBID
+cat temp1 | sort -k 2,2 -T $tmp_dir > temp2
+cat temp2 | sort -k 3,3 -T $tmp_dir | uniq -c > $sample.scan.circRNA.psl.genomic-exons.annot.uniq.bed
+rm -rf temp1 temp2 $tmp_dir
 
 
 
@@ -133,6 +143,8 @@ input=$sample.scan.circRNA.psl.genomic-exons.annot.uniq.bed
 
 touch circRNA_exon_usage.txt
 rm circRNA_exon_usage.txt
+
+mkdir exon_usage_data
 
 cat $input | awk '{print $4}' | sort | uniq | awk '{if ($1 != ".") print $1}'> circRNA-list
 echo
@@ -157,17 +169,17 @@ while IFS='' read -r circRNA || [[ -n "$circRNA" ]]; do
 
 	#Note: This removes novel exons with fewer than 50 reads. Only for panel datasets. Otherwise use cut off 10
         grep $circRNA $input | awk '{print $3}' | sed 's/,/\n/g' | sort | uniq | grep -v "^[123456789]read_novelExon" | grep -v "^[123][1234567890]read_novelExon" | grep -v "^4[123456789]read_novelExon" > temp_exon_list
-        echo
-        echo "circRNA: "$circRNA
-        echo "exons in circRNA"
-        cat temp_exon_list
-        echo
+        #echo
+        echo "circRNA: "$circRNA > exon_usage.log
+        #echo "exons in circRNA"
+        #cat temp_exon_list
+        #echo
 
 
         while IFS='' read -r exon || [[ -n "$exon" ]]; do
                 exon_hit=$(grep $circRNA $sample.scan.circRNA.psl.genomic-exons.annot.uniq.bed | awk '{print $1,$2}' | grep $exon | awk '{split($0,a,","); sum += a[1]} END {print sum}')
                 circRNA_coverage=$(grep $circRNA $sample.scan.circRNA.psl.genomic-exons.annot.uniq.bed | awk '{print $1,$3}' | grep $exon | awk '{split($0,a,","); sum += a[1]} END {print sum}')
-                printf "$circRNA\t$exon_hit\t$circRNA_coverage\t$exon" | awk 'OFS="\t"{if($3 != 0) {print $1,$2,$3,$2/$3,$4;}}' >> $circRNA.circRNA_exon_usage.txt
+                printf "$circRNA\t$exon_hit\t$circRNA_coverage\t$exon" | awk 'OFS="\t"{if($3 != 0) {print $1,$2,$3,$2/$3,$4;}}' >> exon_usage_data/$circRNA.circRNA_exon_usage.txt 2>> exon_usage.log
 
         done < temp_exon_list
 
@@ -175,6 +187,7 @@ while IFS='' read -r circRNA || [[ -n "$circRNA" ]]; do
 
 done < circRNA-list
 
+echo
 
 
 #cat circRNA_exon_usage.txt | awk '$2>9' | awk '$4<0.9' | awk '$4>0.1' > circRNA_alternative_exon_usage.txt
@@ -186,6 +199,7 @@ done < circRNA-list
 
 echo "Done with novel exons and alternative usage"
 echo "... Doing extra stuff v2"
+echo
 date
 
 
@@ -236,8 +250,9 @@ echo "This part was changed in v2"
 # Getting unique introns that are located in circRNA expression regions
 cat $intron_ucsc | awk 'OFS="\t"{print $1,$2,$3,"intron",0,$6}' | sortBed | uniq > introns.uniq.bed
 cat $sample.circRNA_candidates.annotated.txt | grep -v internal_circRNA_name | awk 'OFS="\t"{print $2,$3,$4,$1,$6,$7}' | sortBed | bedtools map -c 4 -o distinct -a introns.uniq.bed -b - > $sample.introns.uniq.circ.bed
+
 # Remove introns that overlap an exon from Gencode
-bedtools subtract -a introns.uniq.bed -b $exon | sortBed | uniq | awk 'OFS="\t"{print $1,$2,$3,$4"_"$1":"$2"-"$3,1,$6}' | sortBed > introns.uniq.exon_remove.bed
+bedtools subtract -a introns.uniq.bed -b exon_annotation.reformat.bed | sortBed | uniq | awk 'OFS="\t"{print $1,$2,$3,$4"_"$1":"$2"-"$3,1,$6}' | sortBed > introns.uniq.exon_remove.bed
 
 echo "Getting read coverage in introns"
 ## This was changed in v2 so the intron retention is now only searched in bsj spanning reads, not all reads as before
@@ -258,7 +273,9 @@ mapBed -s -F 1.0 -c 4 -o distinct_only -a $sample.introns.uniq.exon_remove.cover
 # List of all unique introns in circRNA regions:
 cat $sample.circRNA_candidates.annotated.txt | grep -v internal_circRNA_name | awk 'OFS="\t"{print $2,$3,$4,$1,$6,$7}' | intersectBed -s -u -a introns.uniq.bed -b - > $sample.all_circRNA_introns.bed
 bedtools map -F 1.0 -c 10 -o max -a $sample.introns.uniq.exon_remove.coverage.onlyCirc.novelExonMap.bed -b $sample.intron.coverage.50pct > $sample.introns.uniq.exon_remove.coverage.onlyCirc.novelExonMap.intronCov.bed
-wc -l introns.bed introns.uniq.bed introns.uniq.exon_remove.bed $sample.introns.uniq.exon_remove.coverage.bed $sample.introns.uniq.exon_remove.coverage.circ.bed $sample.introns.uniq.exon_remove.coverage.onlyCirc.bed $sample.introns.uniq.exon_remove.coverage.onlyCirc.novelExonMap.bed $sample.all_circRNA_introns.bed
+echo
+echo "Number of introns"
+wc -l $intron_ucsc introns.uniq.bed introns.uniq.exon_remove.bed $sample.introns.uniq.exon_remove.coverage.bed $sample.introns.uniq.exon_remove.coverage.circ.bed $sample.introns.uniq.exon_remove.coverage.onlyCirc.bed $sample.introns.uniq.exon_remove.coverage.onlyCirc.novelExonMap.bed $sample.all_circRNA_introns.bed
 
 echo
 echo "Name of columns in *novelExonMap.bed file"

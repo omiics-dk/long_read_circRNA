@@ -95,14 +95,21 @@ Available subcommands:
         original_directory = os.getcwd()
         
         # Main process for circRNA detection
+        print("\033[1m")
         subprocess.run(["bash", "scripts/blat_nanopore_v5.5.sh", sample_path, sample_name, species, reference_path])
+        print("\033[0m")
         
         print("\033[1mcircRNA detection has finished\033[0m")
         print("\033[1mStarting the novel exon and alternative usage script\033[0m")
         
         os.chdir(original_directory)
         
+        print("\033[1m")
         subprocess.run(["bash", "scripts/novel_exons_and_alternative_usage_v7.0.sh", sample_name, species, reference_path])
+        print("\033[0m")
+        
+        print("\033[1mLong_read_circRNA has finished!\033[0m")
+        
     
     def download_data(self):
         parser = argparse.ArgumentParser(
