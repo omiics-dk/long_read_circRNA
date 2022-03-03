@@ -13,10 +13,10 @@ data_folder=$1
 sample=$2
 species=$3
 reference_path=$4
+scriptFolder=$5
 
-scriptFolder=$PWD/scripts
-mkdir $sample
-cd $sample
+mkdir $6
+cd $6
 
 #OriginalScriptFolder=~/long_read_circRNA_v2/scripts
 #mkdir scripts
@@ -117,7 +117,7 @@ grep circRNA $sample.scan.psl >> $sample.scan.circRNA.psl
 ## converting psl to bed12
 cat $sample.scan.circRNA.psl | perl $scriptFolder/psl2bed12.pl | sortBed > $sample.scan.circRNA.psl.bed
 bedtools bedtobam -i $sample.scan.circRNA.psl.bed -bed12 -g $genomeSize > $sample.scan.circRNA.bam
-samtools sort $sample.scan.circRNA.bamb > $sample.scan.circRNA.sort.bam
+samtools sort $sample.scan.circRNA.bam > $sample.scan.circRNA.sort.bam
 samtools index $sample.scan.circRNA.sort.bam
 
 echo
@@ -161,8 +161,8 @@ cat $sample.scan.circRNA.psl.annot.combine.txt | awk 'NR>1,OFS="\t"{print $1,$2,
 cat $sample.scan.circRNA.psl.annot.combine.txt | awk 'NR>1,OFS="\t"{print $1,$3-1,$3,$4"~"$5"~"$6"~"$7"~"$8"~"$9}' | sortBed | uniq > temp_end
 #sortBed -i $single_exon > exon_ref
 # Prints the start and end position of closest exon. In special cases where the circRNA is produced far inside an annoteted exon, such as occurs for Malat1, are filtered away.
-bedtools closest -t first -d -header -a temp_start -b $single_exon | awk 'OFS="\t"{if ($2 - $6 < 31) print $1,$6,$7,$4,$10,$11}' | awk 'OFS="\t"{if($2 > -1) print $0 }' > temp_start.exon
-bedtools closest -t first -d -header -a temp_end -b $single_exon | awk 'OFS="\t"{if ($7 - $3 < 31) print $1,$6,$7,$4,$10,$11}' | awk 'OFS="\t"{if($2 > -1) print $0 }' > temp_end.exon
+bedtools closest -t first -d -header -a temp_start -b $single_exon -nonamecheck | awk 'OFS="\t"{if ($2 - $6 < 31) print $1,$6,$7,$4,$10,$11}' | awk 'OFS="\t"{if($2 > -1) print $0 }' > temp_start.exon
+bedtools closest -t first -d -header -a temp_end -b $single_exon -nonamecheck | awk 'OFS="\t"{if ($7 - $3 < 31) print $1,$6,$7,$4,$10,$11}' | awk 'OFS="\t"{if($2 > -1) print $0 }' > temp_end.exon
 cat temp_start.exon temp_end.exon | sort -k 4,4 > temp_edge_exon
 bedtools groupby -g 4 -c 1,2,3,5,6,4 -o distinct,min,max,distinct,max,count -i temp_edge_exon | awk 'OFS="\t"{print $2,$3,$4,$1,$6,$5,$7}' > temp_exon-ends0
 # Allowing only edges that are formed from 2 read segments:
@@ -180,19 +180,19 @@ cat temp_exon-ends_nohit | sed 's/~/\t/g' | awk 'OFS="\t"{print $1}' | sort | un
 
 ### For the base_list_exon-match.bed file
 # finding host gene: Any overlap of the circRNA with an annotated refSeq gene on the SENSE strand
-bedtools map -s -c 4 -o distinct -a base_list_exon-match.bed -b $mRNA  > base_list_exon-match.temp
+bedtools map -s -c 4 -o distinct -a base_list_exon-match.bed -b $mRNA -nonamecheck > base_list_exon-match.temp
 #intersectBed -wao -f 0.5 -s -a base_list_exon-match.bed -b $mRNA | awk 'OFS="\t"{$NF=""; print $0}' | awk 'OFS="\t"{$NF=""; print $0}' | awk 'OFS="\t"{$NF=""; print $0}' | awk 'OFS="\t"{print $NF,$0}' | awk 'OFS="\t"{$NF=""; print $0}' | awk 'OFS="\t"{$NF=""; print $0}' | awk 'OFS="\t"{$NF=""; print $0}' | awk 'OFS="\t"{$NF=""; print $0}' | awk 'OFS="\t"{print $0,$1}' | awk 'BEGIN{FS=OFS="\t"}{$1="";sub("\t","")}1' | sed s'/\t\t/\t/g' > base_list_exon-match.temp
 # finding antisense genes: ANY overlap of circRNA with an annotated refSeq gene on the ANTISENSE strand
 #intersectBed -wao -S -a base_list_exon-match.temp -b $mRNA | awk 'OFS="\t"{$NF=""; print $0}' | awk 'OFS="\t"{$NF=""; print $0}' | awk 'OFS="\t"{$NF=""; print $0}' | awk 'OFS="\t"{print $NF,$0}' | awk 'OFS="\t"{$NF=""; print $0}' | awk 'OFS="\t"{$NF=""; print $0}' | awk 'OFS="\t"{$NF=""; print $0}' | awk 'OFS="\t"{$NF=""; print $0}' | awk 'OFS="\t"{print $0,$1}' | awk 'BEGIN{FS=OFS="\t"}{$1="";sub("\t","")}1' | sed 's/\t\t/\t/'g > base_list_exon-match.temp2
 # Mapping circBase ID
-bedtools map -f 1.0 -F 1.0 -c 4 -o distinct -a base_list_exon-match.temp -b $circBase | awk '!($0 in a) {a[$0];print}' > base_list_exon-match.temp2.bed
+bedtools map -f 1.0 -F 1.0 -c 4 -o distinct -a base_list_exon-match.temp -b $circBase -nonamecheck | awk '!($0 in a) {a[$0];print}' > base_list_exon-match.temp2.bed
 # Mapping circAtlas
-bedtools map -f 1.0 -F 1.0 -c 4 -o distinct -a base_list_exon-match.temp2.bed -b $circAtlas | awk '!($0 in a) {a[$0];print}' > base_list_exon-match.temp3.bed
+bedtools map -f 1.0 -F 1.0 -c 4 -o distinct -a base_list_exon-match.temp2.bed -b $circAtlas -nonamecheck | awk '!($0 in a) {a[$0];print}' > base_list_exon-match.temp3.bed
 # Mapping CIRCpedia
-bedtools map -f 1.0 -F 1.0 -c 4 -o distinct -a base_list_exon-match.temp3.bed -b $CIRCpedia | awk '!($0 in a) {a[$0];print}' > base_list_exon-match.temp4.bed
+bedtools map -f 1.0 -F 1.0 -c 4 -o distinct -a base_list_exon-match.temp3.bed -b $CIRCpedia -nonamecheck | awk '!($0 in a) {a[$0];print}' > base_list_exon-match.temp4.bed
 
 # Mapping stuff on to the base list
-bedtools map -f 1.0 -F 1.0 -c 4,7,8,9,10,11,5,5,5 -o count,mean,mean,mean,mean,mean,min,max,mean -a base_list_exon-match.temp4.bed -b $sample.scan.circRNA.psl.annot.combine.correct.full.bed | awk 'OFS="\t"{print $1,$2,$3,$4,$11,$6,$7,$8,$9,$10,$12,$13,$14,$15,$16,$17,$18,$19}' | sort -nrk 5,5 > base_list_exon-match.annot.prefilter.bed
+bedtools map -f 1.0 -F 1.0 -c 4,7,8,9,10,11,5,5,5 -o count,mean,mean,mean,mean,mean,min,max,mean -a base_list_exon-match.temp4.bed -b $sample.scan.circRNA.psl.annot.combine.correct.full.bed -nonamecheck | awk 'OFS="\t"{print $1,$2,$3,$4,$11,$6,$7,$8,$9,$10,$12,$13,$14,$15,$16,$17,$18,$19}' | sort -nrk 5,5 > base_list_exon-match.annot.prefilter.bed
 echo
 #echo "Removing exon_match in chrM base_list_exon-match"
 #grep chrM base_list_exon-match.annot.prefilter.bed | wc -l
@@ -208,25 +208,25 @@ rm base_list_exon-match.temp base_list_exon-match.temp3.bed base_list_exon-match
 ### for the reads that do not match exons I check for similarity to circBase, circAtlas or CIRCpedia circRNA. If this is found, the annotated circRNA entry defines boundaries.
 cat $sample.scan.circRNA.psl.annot.combine.txt | sortBed > $sample.scan.circRNA.psl.annot.combine.sort.txt
 # finding host gene: Any overlap of the circRNA with an annotated refSeq gene on either
-intersectBed -wao -a $sample.scan.circRNA.psl.annot.combine.sort.txt -b $mRNA | awk 'OFS="\t"{$NF=""; print $0}' | awk 'OFS="\t"{$NF=""; print $0}' | awk 'OFS="\t"{$NF=""; print $0}' | awk 'OFS="\t"{print $NF,$0}' | awk 'OFS="\t"{$NF=""; print $0}' | awk 'OFS="\t"{$NF=""; print $0}' | awk 'OFS="\t"{$NF=""; print $0}' | awk 'OFS="\t"{$NF=""; print $0}' | awk 'OFS="\t"{print $0,$1}' | awk 'BEGIN{FS=OFS="\t"}{$1="";sub("\t","")}1' | sed s'/\t\t/\t/g' > $sample.scan.circRNA.psl.annot.combine.sort.temp
+intersectBed -wao -a $sample.scan.circRNA.psl.annot.combine.sort.txt -b $mRNA -nonamecheck | awk 'OFS="\t"{$NF=""; print $0}' | awk 'OFS="\t"{$NF=""; print $0}' | awk 'OFS="\t"{$NF=""; print $0}' | awk 'OFS="\t"{print $NF,$0}' | awk 'OFS="\t"{$NF=""; print $0}' | awk 'OFS="\t"{$NF=""; print $0}' | awk 'OFS="\t"{$NF=""; print $0}' | awk 'OFS="\t"{$NF=""; print $0}' | awk 'OFS="\t"{print $0,$1}' | awk 'BEGIN{FS=OFS="\t"}{$1="";sub("\t","")}1' | sed s'/\t\t/\t/g' > $sample.scan.circRNA.psl.annot.combine.sort.temp
 
 
 ## FIX in v 5.5! (was potentially misannotation long circRNAs like RMST)
 # No longer Annotating with 95% similar circRNAs
 # Now we first annotate with 99.9%, then 99% then 95% similar circRNAs. The highest similarity that generates a hit wins. If no hit for 95% then there is just a dot
-bedtools map -f 0.999 -F 0.999 -c 4 -o last -a $sample.scan.circRNA.psl.annot.combine.sort.temp -b $circBase | awk '!($0 in a) {a[$0];print}' > $sample.scan.circRNA.psl.annot.combine.sort.temp2a
-bedtools map -f 0.99 -F 0.99 -c 4 -o last -a $sample.scan.circRNA.psl.annot.combine.sort.temp2a -b $circBase | awk '!($0 in a) {a[$0];print}' > $sample.scan.circRNA.psl.annot.combine.sort.temp2b
-bedtools map -f 0.95 -F 0.95 -c 4 -o last -a $sample.scan.circRNA.psl.annot.combine.sort.temp2b -b $circBase | awk '!($0 in a) {a[$0];print}' > $sample.scan.circRNA.psl.annot.combine.sort.temp2c
+bedtools map -f 0.999 -F 0.999 -c 4 -o last -a $sample.scan.circRNA.psl.annot.combine.sort.temp -b $circBase -nonamecheck | awk '!($0 in a) {a[$0];print}' > $sample.scan.circRNA.psl.annot.combine.sort.temp2a
+bedtools map -f 0.99 -F 0.99 -c 4 -o last -a $sample.scan.circRNA.psl.annot.combine.sort.temp2a -b $circBase -nonamecheck | awk '!($0 in a) {a[$0];print}' > $sample.scan.circRNA.psl.annot.combine.sort.temp2b
+bedtools map -f 0.95 -F 0.95 -c 4 -o last -a $sample.scan.circRNA.psl.annot.combine.sort.temp2b -b $circBase -nonamecheck | awk '!($0 in a) {a[$0];print}' > $sample.scan.circRNA.psl.annot.combine.sort.temp2c
 cat $sample.scan.circRNA.psl.annot.combine.sort.temp2c | awk 'OFS="\t"{print $0, $(NF-2)"space"$(NF-1)"space"$NF}' | sed "s/\.space//g" | sed "s/space.*//g" | awk 'OFS="\t"{$(NF-3)=$(NF-2)=$(NF-1)="";print $0}' | sed 's/\t\+/\t/g;s/^\t//' > $sample.scan.circRNA.psl.annot.combine.sort.temp2
 #rm $sample.scan.circRNA.psl.annot.combine.sort.temp2a $sample.scan.circRNA.psl.annot.combine.sort.temp2b $sample.scan.circRNA.psl.annot.combine.sort.temp2c
-bedtools map -f 0.999 -F 0.999 -c 4 -o last -a $sample.scan.circRNA.psl.annot.combine.sort.temp2 -b $circAtlas | awk '!($0 in a) {a[$0];print}' > $sample.scan.circRNA.psl.annot.combine.sort.temp3a
-bedtools map -f 0.99 -F 0.99 -c 4 -o last -a $sample.scan.circRNA.psl.annot.combine.sort.temp3a -b $circAtlas | awk '!($0 in a) {a[$0];print}' > $sample.scan.circRNA.psl.annot.combine.sort.temp3b
-bedtools map -f 0.95 -F 0.95 -c 4 -o last -a $sample.scan.circRNA.psl.annot.combine.sort.temp3b -b $circAtlas | awk '!($0 in a) {a[$0];print}' > $sample.scan.circRNA.psl.annot.combine.sort.temp3c
+bedtools map -f 0.999 -F 0.999 -c 4 -o last -a $sample.scan.circRNA.psl.annot.combine.sort.temp2 -b $circAtlas -nonamecheck | awk '!($0 in a) {a[$0];print}' > $sample.scan.circRNA.psl.annot.combine.sort.temp3a
+bedtools map -f 0.99 -F 0.99 -c 4 -o last -a $sample.scan.circRNA.psl.annot.combine.sort.temp3a -b $circAtlas -nonamecheck | awk '!($0 in a) {a[$0];print}' > $sample.scan.circRNA.psl.annot.combine.sort.temp3b
+bedtools map -f 0.95 -F 0.95 -c 4 -o last -a $sample.scan.circRNA.psl.annot.combine.sort.temp3b -b $circAtlas -nonamecheck | awk '!($0 in a) {a[$0];print}' > $sample.scan.circRNA.psl.annot.combine.sort.temp3c
 cat $sample.scan.circRNA.psl.annot.combine.sort.temp3c | awk 'OFS="\t"{print $0, $(NF-2)"space"$(NF-1)"space"$NF}' | sed "s/\.space//g" | sed "s/space.*//g" | awk 'OFS="\t"{$(NF-3)=$(NF-2)=$(NF-1)="";print $0}' | sed 's/\t\+/\t/g;s/^\t//' > $sample.scan.circRNA.psl.annot.combine.sort.temp3
 #rm $sample.scan.circRNA.psl.annot.combine.sort.temp3a $sample.scan.circRNA.psl.annot.combine.sort.temp3b $sample.scan.circRNA.psl.annot.combine.sort.temp3c
-bedtools map -f 0.999 -F 0.999 -c 4 -o last -a $sample.scan.circRNA.psl.annot.combine.sort.temp3 -b $CIRCpedia | awk '!($0 in a) {a[$0];print}' > $sample.scan.circRNA.psl.annot.combine.circID.beda
-bedtools map -f 0.99 -F 0.99 -c 4 -o last -a $sample.scan.circRNA.psl.annot.combine.circID.beda -b $CIRCpedia | awk '!($0 in a) {a[$0];print}' > $sample.scan.circRNA.psl.annot.combine.circID.bedb
-bedtools map -f 0.95 -F 0.95 -c 4 -o last -a $sample.scan.circRNA.psl.annot.combine.circID.bedb -b $CIRCpedia | awk '!($0 in a) {a[$0];print}' > $sample.scan.circRNA.psl.annot.combine.circID.bedc
+bedtools map -f 0.999 -F 0.999 -c 4 -o last -a $sample.scan.circRNA.psl.annot.combine.sort.temp3 -b $CIRCpedia -nonamecheck | awk '!($0 in a) {a[$0];print}' > $sample.scan.circRNA.psl.annot.combine.circID.beda
+bedtools map -f 0.99 -F 0.99 -c 4 -o last -a $sample.scan.circRNA.psl.annot.combine.circID.beda -b $CIRCpedia -nonamecheck | awk '!($0 in a) {a[$0];print}' > $sample.scan.circRNA.psl.annot.combine.circID.bedb
+bedtools map -f 0.95 -F 0.95 -c 4 -o last -a $sample.scan.circRNA.psl.annot.combine.circID.bedb -b $CIRCpedia -nonamecheck | awk '!($0 in a) {a[$0];print}' > $sample.scan.circRNA.psl.annot.combine.circID.bedc
 cat $sample.scan.circRNA.psl.annot.combine.circID.bedc | awk 'OFS="\t"{print $0, $(NF-2)"space"$(NF-1)"space"$NF}' | sed "s/\.space//g" | sed "s/space.*//g" | awk 'OFS="\t"{$(NF-3)=$(NF-2)=$(NF-1)="";print $0}' | sed 's/\t\+/\t/g;s/^\t//' > $sample.scan.circRNA.psl.annot.combine.circID.bed
 #rm $sample.scan.circRNA.psl.annot.combine.circID.beda $sample.scan.circRNA.psl.annot.combine.circID.bedb $sample.scan.circRNA.psl.annot.combine.circID.bedc
 
@@ -249,7 +249,7 @@ cat $sample.circBase_no_exon_match_reads.bed | sortBed > temp
 mv temp $sample.circBase_no_exon_match_reads.bed
 
 # Mapping stuff on to the $sample.circBase_no_exon_match_reads.bed list - I increases the stringency from 95 to 99% here for v 5.1:
-bedtools map -f 0.99 -F 0.99 -c 4,10,11,12,13,5,6,7,8,9 -o count,distinct,distinct,distinct,distinct,mean,mean,mean,mean,mean -a $sample.circBase_no_exon_match_reads.bed -b no_exon_match_reads.bed | awk 'OFS="\t"{print $1,$2,$3,"no_exon_match",$7,$6,$8,$9,$10,$11,$12,$13,$14,$15,$16,"NA","NA","NA"}' | sort -nrk 5,5 > base_list_no-exon.cirBaseID.annot.prefilter.bed
+bedtools map -f 0.99 -F 0.99 -c 4,10,11,12,13,5,6,7,8,9 -o count,distinct,distinct,distinct,distinct,mean,mean,mean,mean,mean -a $sample.circBase_no_exon_match_reads.bed -b no_exon_match_reads.bed -nonamecheck | awk 'OFS="\t"{print $1,$2,$3,"no_exon_match",$7,$6,$8,$9,$10,$11,$12,$13,$14,$15,$16,"NA","NA","NA"}' | sort -nrk 5,5 > base_list_no-exon.cirBaseID.annot.prefilter.bed
 cat base_list_no-exon.cirBaseID.annot.prefilter.bed | grep -v chrM | grep -v Rn45s | grep -v "no_exon_match[[:space:]]0" > $sample.base_list_no-exon.cirBaseID.annot.bed
 
 #rm base_list_no-exon.cirBaseID.annot.prefilter.bed

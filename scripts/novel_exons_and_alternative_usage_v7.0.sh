@@ -12,15 +12,14 @@ export PATH=~/omiicsTransfer/software/bedtools2/bin/:$PATH
 sample=$1
 organism=$2
 reference_path=$3
-
-scriptFolder=$PWD/scripts
+scriptFolder=$4
 
 echo $sample
 echo $organism
 echo
 date
 
-cd $sample
+cd $5
 
 # v6.1: bug fix and vastly improved method for generation of circRNA_exon_usage.txt
 # v7.0: Added the script previously called extra_stuff_v2.sh to this script, so now intron analyses, and phasing is done here
@@ -249,10 +248,10 @@ echo "This part was changed in v2"
 ## Make intron file:
 # Getting unique introns that are located in circRNA expression regions
 cat $intron_ucsc | awk 'OFS="\t"{print $1,$2,$3,"intron",0,$6}' | sortBed | uniq > introns.uniq.bed
-cat $sample.circRNA_candidates.annotated.txt | grep -v internal_circRNA_name | awk 'OFS="\t"{print $2,$3,$4,$1,$6,$7}' | sortBed | bedtools map -c 4 -o distinct -a introns.uniq.bed -b - > $sample.introns.uniq.circ.bed
+cat $sample.circRNA_candidates.annotated.txt | grep -v internal_circRNA_name | awk 'OFS="\t"{print $2,$3,$4,$1,$6,$7}' | sortBed | bedtools map -c 4 -o distinct -a introns.uniq.bed -b - -nonamecheck > $sample.introns.uniq.circ.bed
 
 # Remove introns that overlap an exon from Gencode
-bedtools subtract -a introns.uniq.bed -b exon_annotation.reformat.bed | sortBed | uniq | awk 'OFS="\t"{print $1,$2,$3,$4"_"$1":"$2"-"$3,1,$6}' | sortBed > introns.uniq.exon_remove.bed
+bedtools subtract -a introns.uniq.bed -b exon_annotation.reformat.bed -nonamecheck | sortBed | uniq | awk 'OFS="\t"{print $1,$2,$3,$4"_"$1":"$2"-"$3,1,$6}' | sortBed > introns.uniq.exon_remove.bed
 
 echo "Getting read coverage in introns"
 ## This was changed in v2 so the intron retention is now only searched in bsj spanning reads, not all reads as before

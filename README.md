@@ -3,9 +3,22 @@
 This is a tool designed to be run on a linux system since it uses many standard GNU tools.
 It might also work on Mac OS X system.
 
+Provides a workflow for detection of circRNA in nanopore data.
+
 ## Installation
 
-Clone the repository with all of the scripts in the script directory.
+For conveince clone the repository to the home directory:
+
+```
+cd ~
+git clone https://github.com/omiics-dk/long_read_circRNA.git
+```
+
+Alternatively you can clone the repository somewhere else and make a symbolic link to the repository.
+
+```
+ln -s path/to/long_read_circRNA ~/long_read_circRNA
+```
 
 If you have [conda](https://docs.conda.io/en/latest/) you can setup an environment with all of the required dependencies.
 
@@ -24,6 +37,14 @@ If perl is not installed on your system you can include perl in the installation
 ```
 conda create -n long_read_circRNA -c bioconda -c conda-forge perl bedtools samtools pblat nanofilt
 ```
+
+To use the environment you need to activate it afterwards.
+
+```
+conda activate long_read_circRNA
+```
+
+To make the long_read_circRNA script available in the commandline everywhere in the system you can place the file somewhere accessible in the PATH, such as /usr/local/bin or ~/bin
 
 ## Command line interface
  
@@ -86,7 +107,11 @@ optional arguments:
 
 ### Working example
 
-`./long_read_circRNA check-installation`
+When running `./long_read_circRNA check-installation` you will get a summary of all the tools that are check for.
+If there is no message for an individual tool then it has been found and there where no problems with running it.
+
+When the installation is properly installed and you run the check-installation subcommand you will find that returns that all of the expected software requirments are present.
+
 ```
   _                    ___             _      _        ___ _  _   _   
  | |   ___ _ _  __ _  | _ \___ __ _ __| |  __(_)_ _ __| _ \ \| | /_\  
@@ -164,7 +189,13 @@ Different datasets can be skipped if they should not be downloaded, by using the
 
 ## Run
 
-To 
+For running the software you use the run subcommand, and provide a sample `.fq.gz` file. There are serval options for changing the behavoiur of the run command such as:
+
+* Specifying which species you are using, currently there are only options for human and mouse. Default is human.
+* Defining a path to where the reference files are location. Default is ./data.
+  * It should be noted that it automatically searchs for ./data/human if you choose human as the species, and therefore you should only provide the ./data directory
+* Providing the path to where the scripts are located. Defaults to the home directory `~/long_read_circRNA/scripts`
+* Providing where the outputs will be written. Default is the current directory it is running it, where it will automatically create directory with the sample name
 
 ```
   _                    ___             _      _        ___ _  _   _   
@@ -174,28 +205,74 @@ To
                |___/                                                    
 
 Version: v2
-usage: long_read_circRNA run sample [args]
+usage: long_read_circRNA [-h] [--reference-path REFERENCE_PATH]
+                         [--species {human,mouse}] [--script-path SCRIPT_PATH]
+                         [--output-path OUTPUT_PATH]
+                         sample
 
 Run the program for detecting circRNAs in nanopore data
 
 positional arguments:
-  sample                Provide a sample input .fq.gz file that should be processed by the tool
+  sample                Provide a sample input .fq.gz file that should be
+                        processed by the tool
 
 optional arguments:
   -h, --help            show this help message and exit
   --reference-path REFERENCE_PATH
-                        Provide a path for where the reference data is located.
+                        Provide a path for where the reference data is
+                        located. Default is './data'.
   --species {human,mouse}
-
+                        Select which species the sample that is from, and
+                        specify which species reference files should be used.
+                        Default is set to human.
+  --script-path SCRIPT_PATH
+                        Specify where the long_read_circRNA scripts are
+                        located. By default it assumes that they are located
+                        at '~/long_read_circRNA/scripts'.
+  --output-path OUTPUT_PATH, -o OUTPUT_PATH
+                        Provide a path for where the output should be saved.
+                        Default is the current directory. This will use the
+                        output-path and create a directory in that path based
+                        on the sample name provided.
 ```
 
-To start the circRNA quantification
+The script has numerous checks and error messages if it finds any errors in the provided inputs so the scripts do not start without everything being in place.
 
+To start the circRNA quantification on a sample you can simply write:
+``` bash
+./long_read_circRNA run path_to_sample/sample_name.fq.gz
+```
+
+If you need to change any of the settings in the run then you can use the flags presented above.
+
+When the repository is installed or available from the home directory, and the long_read_circRNA script is avaible in the PATH then a simple workflow for starting sample is:
+
+``` bash
+cd path_to_where_analysis_should_be_run
+
+long_read_circRNA download-data
+
+long_read_circRNA run sample_name.fq.gz
+```
+
+To run multiple samples you can easily use a for loop to run the script on multiple samples:
+
+``` bash
+cd path_to_where_analysis_should_be_run
+
+long_read_circRNA download-data
+
+samples = "sample_data/sample1.fq.gz sample_data/sample2.fq.gz sample_data/sample3.fq.gz"
+
+for sample in $samples
+do
+  long_read_circRNA run sample_name.fq.gz
+done
+```
 
 The scripts output a number of files, the primary one being:
 
 *[sample].circRNA_candidates.annotated.txt*
-
 
 This file shows all circRNAs detected in the nanopore data, listed with the highest expressed at the top.
 
