@@ -1,35 +1,49 @@
 #!/bin/bash
+#SBATCH -c 1
+#SBATCH -p normal
+#SBATCH --mem=64g
+#SBATCH --time=12:00:00
 
-source /com/extra/ucsc/2015-04-21/load.sh
+
+export PATH=~/omiicsTransfer/software/bedtools2/bin/:$PATH
 
 
 # v2 improves intron definition by using ucsc table browser introns and intron retention is now only searched in bsj spanning reads, not all reads as before
 
 
-## Human
-sample=old_hBr_circ
-genomeSize=/home/mtv/software/IGVTools/genomes/hg19.chrom.sizes
-fa=/home/mtv/faststorage/genomes/human_hg19_july_2010/hg19.fa
-exon_original=/home/mtv/faststorage/genomes/human_hg19_july_2010/gencode.v29lift37.annotation.gffread.exon.bed
-gene=/home/mtv/faststorage/genomes/human_hg19_july_2010/gencode.v29lift37.annotation.gffread.bed
-circBase=/home/mtv/faststorage/circBase_June-2017/circbase_ucsc-browser/hsa_circRNA_complete.hg19.unique.sort.length.bed
-circAtlas=/home/mtv/faststorage/circAtlas/circAtlas2.0_June2019_human_hg19_circRNA.0-based.bed
-CIRCpedia=/home/mtv/faststorage/CIRCpedia/CIRCpedia_v2_June2019_human_hg19_All_circRNA.unique.bed
-intron_ucsc=/home/mtv/faststorage/genomes/human_hg19_july_2010/hg19_ucsc_Intron_Gencode_V34lift37.bed
+sample=$1
+organism=$2
 
+echo $sample
+echo $organism
+echo
+
+cd $sample
+
+
+#if [ organism == "human" ]
+#then
+### Human
+#sample=old_hBr_circ
+#genomeSize=/home/mtv/software/IGVTools/genomes/hg19.chrom.sizes
+#fa=/home/mtv/faststorage/genomes/human_hg19_july_2010/hg19.fa
+#exon_original=/home/mtv/faststorage/genomes/human_hg19_july_2010/gencode.v29lift37.annotation.gffread.exon.bed
+#gene=/home/mtv/faststorage/genomes/human_hg19_july_2010/gencode.v29lift37.annotation.gffread.bed
+#intron_ucsc=/home/mtv/faststorage/genomes/human_hg19_july_2010/hg19_ucsc_Intron_Gencode_V34lift37.bed
+fi
+#elif [ organism == "mouse" ]
+#then
 ## Mouse
-#sample=old_mBr_circ
-#genomeSize=/home/mtv/software/IGVTools/genomes/mm10.chrom.sizes
-#fa=/home/mtv/faststorage/genomes/mm10/Annotation/Genes/Mus_musculus.GRCm38.87.chr-fix.fa
-#exon_original=/home/mtv/faststorage/genomes/mm10_GRCm38.p6/gencode.vM19.annotation.exon.bed
-#gene=/home/mtv/faststorage/genomes/mm10_GRCm38.p6/gencode.vM19.annotation.bed
-#circBase=/home/mtv/faststorage/circBase_June-2017/mmu_circRNA_complete.mm10lift.sort.length.bed
-#intron_ucsc=/home/mtv/faststorage/genomes/mm10_GRCm38.p6/mm10_ucsc_Intron_Gencode_VM23.bed
+genomeSize=/home/mtv/software/IGVTools/genomes/mm10.chrom.sizes
+fa=/home/mtv/omiicsTransfer/genomes/mm10_GRCm38.p6/GRCm38.p6.genome_simple.fa
+exon_original=/home/mtv/omiicsTransfer/genomes/mm10_GRCm38.p6/gencode.vM25.annotation.gffread.exon.merge.bed
+gene=/home/mtv/omiicsTransfer/genomes/mm10_GRCm38.p6/gencode.vM25.annotation.gffread.bed
+intron_ucsc=/home/mtv/faststorage/genomes/mm10_GRCm38.p6/mm10_ucsc_Intron_Gencode_VM23.bed
+# fi
 
 ## This reformats the annotation file to include genome region in the name, which makes the output better in the end
 cat $exon_original | sed 's/;[[:graph:]]*//g' | awk 'OFS="\t"{print $1,$2,$3,$4"_"$1":"$2"-"$3,0,$6}'  > exons.bed
 exon=exons.bed
-
 
 
 ## Remove empty columns in circRNA candicates file:
