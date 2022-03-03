@@ -182,6 +182,9 @@ optional arguments:
   --skip-human          Skip downloading the human reference files
   --skip-mouse          Skip downloading the mouse reference files
   --skip-testdata       Skip downloading the test data
+  --installation-path INSTALLATION_PATH
+                        Provide a path for where the script is installed.
+                        Default is ~/long_read_circRNA
 ```
 
 By default the tool will automatically download references to `./data` and the test data to `./test_fastq`. These can be changed by using `--data-output` and `--test-output` flags.
@@ -207,7 +210,7 @@ For running the software you use the run subcommand, and provide a sample `.fq.g
 Version: v2
 usage: long_read_circRNA [-h] [--reference-path REFERENCE_PATH]
                          [--species {human,mouse}] [--script-path SCRIPT_PATH]
-                         [--output-path OUTPUT_PATH]
+                         [--output-path OUTPUT_PATH] [--dry-run]
                          sample
 
 Run the program for detecting circRNAs in nanopore data
@@ -234,6 +237,8 @@ optional arguments:
                         Default is the current directory. This will use the
                         output-path and create a directory in that path based
                         on the sample name provided.
+  --dry-run             Perform all of the input checks without starting the
+                        detection scripts
 ```
 
 The script has numerous checks and error messages if it finds any errors in the provided inputs so the scripts do not start without everything being in place.

@@ -53,6 +53,7 @@ Available subcommands:
         parser.add_argument('--species', default='human', choices=['human', 'mouse'], help="Select which species the sample that is from, and specify which species reference files should be used. Default is set to human.")
         parser.add_argument('--script-path', default="~/long_read_circRNA/scripts", help="Specify where the long_read_circRNA scripts are located. By default it assumes that they are located at '~/long_read_circRNA/scripts'.")
         parser.add_argument('--output-path', '-o', default=".", help="Provide a path for where the output should be saved. Default is the current directory. This will use the output-path and create a directory in that path based on the sample name provided.")
+        parser.add_argument('--dry-run', action="store_true", help="Perform all of the input checks without starting the detection scripts")
         
         args = parser.parse_args(sys.argv[2:])
     
@@ -90,12 +91,12 @@ Available subcommands:
         sample_path = str(Path(os.path.dirname(args.sample)).resolve())
         sample_name = os.path.basename(args.sample).replace('.fq.gz', '')
         
-        script_path = str(Path(args.script_path).resolve())
+        script_path = str(Path(os.path.expanduser(args.script_path)).resolve())
         output_path = str(Path(args.output_path).resolve())
         
         # Check if the script-path exists
         if not os.path.exists(script_path):
-            raise Exception("The script path '{}' does not exists! Please point to the location of the scripts directory in the long_read_circRNA path using --script-path".format(args.script_path))
+            raise Exception("The script path '{}' does not exists! Please point to the location of the scripts directory in the long_read_circRNA path using --script-path".format(script_path))
         # Check if the required scripts are in the script script-path
         target_scripts = ["blat_nanopore_v5.5.sh", "novel_exons_and_alternative_usage_v7.0.sh"]
         for target_script in target_scripts:
@@ -118,23 +119,26 @@ Available subcommands:
         
         original_directory = os.getcwd()
         
-        # Main process for circRNA detection
-        print("\033[1m")
-        subprocess.run(["bash", os.path.join(script_path, "blat_nanopore_v5.5.sh"), 
-                        sample_path, sample_name, species, reference_path, script_path, output_path])
-        print("\033[0m")
+        if not args.dry_run:
+            # Main process for circRNA detection
+            print("\033[1m")
+            subprocess.run(["bash", os.path.join(script_path, "blat_nanopore_v5.5.sh"), 
+                            sample_path, sample_name, species, reference_path, script_path, output_path])
+            print("\033[0m")
         
-        print("\033[1mcircRNA detection has finished\033[0m")
-        print("\033[1mStarting the novel exon and alternative usage script\033[0m")
+            print("\033[1mcircRNA detection has finished\033[0m")
+            print("\033[1mStarting the novel exon and alternative usage script\033[0m")
         
-        os.chdir(original_directory)
+            os.chdir(original_directory)
         
-        print("\033[1m")
-        subprocess.run(["bash", os.path.join(script_path, "novel_exons_and_alternative_usage_v7.0.sh"), 
+            print("\033[1m")
+            subprocess.run(["bash", os.path.join(script_path, "novel_exons_and_alternative_usage_v7.0.sh"), 
                         sample_name, species, reference_path, script_path, output_path])
-        print("\033[0m")
+            print("\033[0m")
         
-        print("\033[1mLong_read_circRNA has finished!\033[0m")
+            print("\033[1mLong_read_circRNA has finished!\033[0m")
+        else:
+            print("\033[1mDry run is complete\033[0m")
         
     
     def download_data(self):
@@ -148,6 +152,7 @@ Available subcommands:
         parser.add_argument("--skip-human", action="store_true", help="Skip downloading the human reference files")
         parser.add_argument("--skip-mouse", action="store_true", help="Skip downloading the mouse reference files")
         parser.add_argument("--skip-testdata", action="store_true", help="Skip downloading the test data")
+        parser.add_argument("--installation-path", default="~/long_read_circRNA", help="Provide a path for where the script is installed. Default is ~/long_read_circRNA")
         args = parser.parse_args(sys.argv[2:])
         
         skip_check = {True: "skip", False: "no"}
@@ -156,7 +161,18 @@ Available subcommands:
         skip_mouse = skip_check[args.skip_mouse]
         skip_testdata = skip_check[args.skip_testdata]
         
-        call = subprocess.run(["bash", "get_required_data.sh", args.data_output, args.test_output,
+        installation_path = str(Path(os.path.expanduser(args.installation_path)).resolve())
+        
+        # Check if the script-path exists
+        if not os.path.exists(installation_path):
+            raise Exception("The installation path '{}' does not exists! Please point to the location installed long_read_circRNA path using --installation-path".format(installation_path))
+        # Check if the required scripts are in the script script-path
+        target_scripts = ["get_required_data.sh"]
+        for target_script in target_scripts:
+            if not os.path.exists(os.path.join(installation_path, target_script)):
+                raise Exception("'{}' script is not found in the installation path '{}'. Are you sure the provided script-path is correct?".format(target_script, installation_path))
+        
+        call = subprocess.run(["bash", os.path.join(installation_path, "get_required_data.sh"), args.data_output, args.test_output,
                                skip_testdata, skip_human, skip_mouse])
     
     def check_installation(self, args=True):
