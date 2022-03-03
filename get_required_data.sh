@@ -27,6 +27,7 @@ if [[ $4 != "skip" ]]; then
     wget -O $1/human/Human_refFlat_exon_hg19_Oct2018.sort.bed https://www.dropbox.com/s/xt0r1xvs5r1x7fk/Human_refFlat_exon_hg19_Oct2018.sort.bed?dl=1
     wget -O $1/human/Human_refFlat_hg19_Oct2018.unique.merge.bed https://www.dropbox.com/s/zc0v9tb1j0v6206/Human_refFlat_hg19_Oct2018.unique.merge.bed?dl=1
     wget -O $1/human/UCSC-EST-exons_hg19_09-2018.bed https://www.dropbox.com/s/tktvsayp5ahyut0/UCSC-EST-exons_hg19_09-2018.bed?dl=1
+    wget -O $1/human/hg19_ucsc_Intron_Gencode_V34lift37.bed https://www.dropbox.com/s/zud29uo8qxsftz8/hg19_ucsc_Intron_Gencode_V34lift37.bed?dl=1
 else
     echo -e "\033[1mSkipping human references\033[0m"
 fi
@@ -42,6 +43,7 @@ if [[ $5 != "skip" ]]; then
     wget -O $1/mouse/Mouse_refFlat_mm10_Oct2018.unique.merge.bed https://www.dropbox.com/s/lmsrt9yo9xrd5tt/Mouse_refFlat_mm10_Oct2018.unique.merge.bed?dl=1
     wget -O $1/mouse/Mus_musculus.GRCm38.87.chr-fix.fa https://www.dropbox.com/s/8sojnmhc5z9kizs/Mus_musculus.GRCm38.87.chr-fix.fa?dl=1
     wget -O $1/mouse/UCSC-EST-exons_mm10_09-2018.bed https://www.dropbox.com/s/2lbll2mjipyp96k/UCSC-EST-exons_mm10_09-2018.bed?dl=1
+    wget -O $1/mouse/mm10_ucsc_Intron_Gencode_VM23.bed https://www.dropbox.com/s/2wqp2ptnq2knkj0/mm10_ucsc_Intron_Gencode_VM23.bed?dl=1
 else
     echo -e "\033[1mSkipping mouse references\033[0m"
 fi
