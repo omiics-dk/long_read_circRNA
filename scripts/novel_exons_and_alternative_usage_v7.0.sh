@@ -208,7 +208,8 @@ printf "Internal circRNA IDs\tExon used\tExon covered by read\tUsage level\texon
 # only keep "Exon used" of 10 or more reads on exon. Then remove exons with name ".". Then sort by "Internal circRNA IDs"
 cat $sample.circRNA_exon_usage_filter.txt | awk '$2>9' | awk '{ if ( $5 != "." ) { print $0; } }' | sort -k 1,1 > $sample.circ_circRNA_exon_usage_length_of_exons.temp.txt
 cat $sample.circ_circRNA_exon_usage_length_of_exons.temp.txt | awk '{print $5}' | sed 's/_chr/\tchr/g' | awk '{print $2}' > coordinate.temp
-cat coordinate.temp | sed 's/:/\t/g' | sed 's/-/\t/g' | awk 'OFS="\t"{print $2, $3, $3-$2}' > start_end_sizepaste $sample.circ_circRNA_exon_usage_length_of_exons.temp.txt start_end_size >> $sample.circ_circRNA_exon_usage_length_of_exons.txt
+cat coordinate.temp | sed 's/:/\t/g' | sed 's/-/\t/g' | awk 'OFS="\t"{print $2, $3, $3-$2}' > start_end_size
+paste $sample.circ_circRNA_exon_usage_length_of_exons.temp.txt start_end_size >> $sample.circ_circRNA_exon_usage_length_of_exons.txt
 rm coordinate.temp start_end_size $sample.circ_circRNA_exon_usage_length_of_exons.temp.txt
 
 
