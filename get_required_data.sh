@@ -1,15 +1,12 @@
 #!/bin/bash
 
-
 # Make folders
 mkdir -p $1
-mkdir -p $1/human
-mkdir -p $1/mouse
-mkdir -p $2
 
 # Download data
 if [[ $3 != "skip" ]]; then
     echo -e "\033[1mDownloading test data\033[0m"
+    mkdir -p $2
     wget -O $2/human_brain_100k.fq.gz https://www.dropbox.com/s/6i7gkb3r81u2kpn/human_brain_100k.fq.gz?dl=1
 else
     echo -e "\033[1mSkipping test data\033[0m"
@@ -17,6 +14,7 @@ fi
 
 if [[ $4 != "skip" ]]; then
     echo -e "\033[1mDownloading human references\033[0m"
+    mkdir -p $1/human
     wget -O $1/human/circAtlas2.0_June2019_human_hg19_circRNA.0-based.bed https://www.dropbox.com/s/7dmycsjn23lcly9/circAtlas2.0_June2019_human_hg19_circRNA.0-based.bed?dl=1
     wget -O $1/human/CIRCpedia_v2_June2019_human_hg19_All_circRNA.unique.bed https://www.dropbox.com/s/qj2h3y9s67efnlu/CIRCpedia_v2_June2019_human_hg19_All_circRNA.unique.bed?dl=1
     wget -O $1/human/hg19.chrom.sizes https://www.dropbox.com/s/xiag413fshhzsam/hg19.chrom.sizes?dl=1
@@ -28,12 +26,16 @@ if [[ $4 != "skip" ]]; then
     wget -O $1/human/Human_refFlat_hg19_Oct2018.unique.merge.bed https://www.dropbox.com/s/zc0v9tb1j0v6206/Human_refFlat_hg19_Oct2018.unique.merge.bed?dl=1
     wget -O $1/human/UCSC-EST-exons_hg19_09-2018.bed https://www.dropbox.com/s/tktvsayp5ahyut0/UCSC-EST-exons_hg19_09-2018.bed?dl=1
     wget -O $1/human/hg19_ucsc_Intron_Gencode_V34lift37.bed https://www.dropbox.com/s/zud29uo8qxsftz8/hg19_ucsc_Intron_Gencode_V34lift37.bed?dl=1
+    wget -O $1/human/hg19.phase.info.txt https://www.dropbox.com/s/9csj1uhf4bohele/hg19.phase.info.txt?dl=1
+    wget -O $1/human/gencode.v37lift37.annotation.gffread.exon.bed https://www.dropbox.com/s/v11osaoxodytquz/gencode.v37lift37.annotation.gffread.exon.bed?dl=1
+    wget -O $1/human/gencode.v37lift37.annotation.gffread.exon.merge.bed https://www.dropbox.com/s/ghkyx9owo1w1trr/gencode.v37lift37.annotation.gffread.exon.merge.bed?dl=1
 else
     echo -e "\033[1mSkipping human references\033[0m"
 fi
 
 if [[ $5 != "skip" ]]; then
     echo -e "\033[1mDownloading mouse references\033[0m"
+    mkdir -p $1/mouse
     wget -O $1/mouse/circAtlas2.0_Aug2019_mouse_mm10_circRNA.0-based.bed https://www.dropbox.com/s/7qe6m97jcauz4cy/circAtlas2.0_Aug2019_mouse_mm10_circRNA.0-based.bed?dl=1
     wget -O $1/mouse/CIRCpedia_v2_June2019_mouse_mm10_All_circRNA.unique.bed https://www.dropbox.com/s/97uej0pp37j9cz1/CIRCpedia_v2_June2019_mouse_mm10_All_circRNA.unique.bed?dl=1
     wget -O $1/mouse/mm10.chrom.sizes https://www.dropbox.com/s/kvv21ewlxw5wbjg/mm10.chrom.sizes?dl=1
@@ -44,6 +46,9 @@ if [[ $5 != "skip" ]]; then
     wget -O $1/mouse/Mus_musculus.GRCm38.87.chr-fix.fa https://www.dropbox.com/s/8sojnmhc5z9kizs/Mus_musculus.GRCm38.87.chr-fix.fa?dl=1
     wget -O $1/mouse/UCSC-EST-exons_mm10_09-2018.bed https://www.dropbox.com/s/2lbll2mjipyp96k/UCSC-EST-exons_mm10_09-2018.bed?dl=1
     wget -O $1/mouse/mm10_ucsc_Intron_Gencode_VM23.bed https://www.dropbox.com/s/2wqp2ptnq2knkj0/mm10_ucsc_Intron_Gencode_VM23.bed?dl=1
+    wget -O $1/mouse/mm10.phase.info.txt https://www.dropbox.com/s/5j9mdlsx4hmtc4l/mm10.phase.info.txt?dl=1
+    wget -O $1/mouse/gencode.vM25.annotation.gffread.exon.bed https://www.dropbox.com/s/qv6kp146yivb31f/gencode.vM25.annotation.gffread.exon.bed?dl=0
+    wget -O $1/mouse/gencode.vM25.annotation.gffread.exon.merge.bed https://www.dropbox.com/s/l8baezuzztg9p5r/gencode.vM25.annotation.gffread.exon.merge.bed?dl=1
 else
     echo -e "\033[1mSkipping mouse references\033[0m"
 fi

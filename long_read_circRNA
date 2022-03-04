@@ -54,6 +54,7 @@ Available subcommands:
         parser.add_argument('--script-path', default="~/long_read_circRNA/scripts", help="Specify where the long_read_circRNA scripts are located. By default it assumes that they are located at '~/long_read_circRNA/scripts'.")
         parser.add_argument('--output-path', '-o', default=".", help="Provide a path for where the output should be saved. Default is the current directory. This will use the output-path and create a directory in that path based on the sample name provided.")
         parser.add_argument('--dry-run', action="store_true", help="Perform all of the input checks without starting the detection scripts")
+        parser.add_argument('--keep-temp', action="store_true", help="Keep all of the temporary files.")
         
         args = parser.parse_args(sys.argv[2:])
     
@@ -130,10 +131,14 @@ Available subcommands:
             print("\033[1mStarting the novel exon and alternative usage script\033[0m")
         
             os.chdir(original_directory)
+            
+            keep_check = {True: "yes", False: "no"}
+            
+            keep_temp = keep_check[args.keep_temp]
         
             print("\033[1m")
             subprocess.run(["bash", os.path.join(script_path, "novel_exons_and_alternative_usage_v7.0.sh"), 
-                        sample_name, species, reference_path, script_path, output_path])
+                        sample_name, species, reference_path, script_path, output_path, keep_temp])
             print("\033[0m")
         
             print("\033[1mLong_read_circRNA has finished!\033[0m")

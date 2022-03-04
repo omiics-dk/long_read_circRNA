@@ -31,9 +31,8 @@ genomeSize=$reference_path/human/hg19.chrom.sizes
 fa=$reference_path/human/hg19.fa
 exon_refseq=$reference_path/human/Human_refFlat_exon_hg19_Oct2018.sort.bed
 #exon=$reference_path/human/gencode.v29lift37.annotation.gffread.exon.merge.bed
-exon_original=$reference_path/human/gencode.v29lift37.annotation.gffread.exon.merge.bed
-exon_full=$reference_path/human/gencode.v29lift37.annotation.gffread.exon.bed
-gene=$reference_path/human/gencode.v29lift37.annotation.gffread.bed
+exon_original=$reference_path/human/gencode.v37lift37.annotation.gffread.exon.merge.bed
+exon_full=$reference_path/human/gencode.v37lift37.annotation.gffread.exon.bed
 intron_ucsc=$reference_path/human/hg19_ucsc_Intron_Gencode_V34lift37.bed
 elif [ $organism == "mouse" ]
 then
@@ -43,7 +42,6 @@ fa=$reference_path/human/GRCm38.p6.genome_simple.fa
 exon_refseq=$reference_path/human/Mouse_refFlat_exon_mm10_Oct2018.sort.bed
 exon_original=$reference_path/human/gencode.vM25.annotation.gffread.exon.merge.bed
 exon_full=$reference_path/human/gencode.vM25.annotation.gffread.exon.bed
-gene=$reference_path/human/mm10_GRCm38.p6/gencode.vM25.annotation.gffread.bed
 intron_ucsc=$reference_path/human/mm10_ucsc_Intron_Gencode_VM23.bed
 fi
 
@@ -196,8 +194,27 @@ echo
 #mv core_circ_grep.sh-*.out DELETE
 #mv *.circRNA_exon_usage.txt DELETE
 
+### after novel exons and alternative usage
+cat exon_usage_data/*.circRNA_exon_usage.txt | sort -k 5,5 | sort -k 1,1 | uniq > $sample.circRNA_exon_usage.txt
+# Filter to only keep rows with 5 columns. These are the real hits:
+cat $sample.circRNA_exon_usage.txt | awk 'NF==5{print}{}' > $sample.circRNA_exon_usage_filter.txt
+
+# Get the alternatively used exons
+cat $sample.circRNA_exon_usage.txt | awk '$2>9' | awk '$4<0.9' | awk '$4>0.1' > $sample.circRNA_alternative_exon_usage.txt
+#wc -l $sample.circRNA_exon_usage.txt $sample.circRNA_alternative_exon_usage.txt
+
+### Making _circ_circRNA_exon_usage_length_of_exons
+printf "Internal circRNA IDs\tExon used\tExon covered by read\tUsage level\texon\tstart end\tlength\n" > $sample.circ_circRNA_exon_usage_length_of_exons.txt
+# only keep "Exon used" of 10 or more reads on exon. Then remove exons with name ".". Then sort by "Internal circRNA IDs"
+cat $sample.circRNA_exon_usage_filter.txt | awk '$2>9' | awk '{ if ( $5 != "." ) { print $0; } }' | sort -k 1,1 > $sample.circ_circRNA_exon_usage_length_of_exons.temp.txt
+cat $sample.circ_circRNA_exon_usage_length_of_exons.temp.txt | awk '{print $5}' | sed 's/_chr/\tchr/g' | awk '{print $2}' > coordinate.temp
+cat coordinate.temp | sed 's/:/\t/g' | sed 's/-/\t/g' | awk 'OFS="\t"{print $2, $3, $3-$2}' > start_end_size
+paste $sample.circ_circRNA_exon_usage_length_of_exons.temp.txt start_end_size >> $sample.circ_circRNA_exon_usage_length_of_exons.txt
+rm coordinate.temp start_end_size $sample.circ_circRNA_exon_usage_length_of_exons.temp.txt
+
+
 echo "Done with novel exons and alternative usage"
-echo "... Doing extra stuff v2"
+#echo "... Doing extra stuff v2"
 echo
 date
 
@@ -214,11 +231,7 @@ mv $sample.circRNA_candidates.annotated.txt OLD.$sample.circRNA_candidates.annot
 grep -v [[:space:]]0[[:space:]][+-][[:space:]]\.[[:space:]]\.[[:space:]]\.[[:space:]]\.[[:space:]]\. OLD.$sample.circRNA_candidates.annotated.txt > $sample.circRNA_candidates.annotated.txt
 
 
-
-
-
-
-wc -l OLD.$sample.circRNA_candidates.annotated.txt $sample.circRNA_candidates.annotated.txt
+#wc -l OLD.$sample.circRNA_candidates.annotated.txt $sample.circRNA_candidates.annotated.txt
 
 
 ## Finding circRNAs with at least 10 reads that have more than 10% intronic read coverage
@@ -297,6 +310,24 @@ cat $sample.novel.exons.2reads.tab | awk '{print $2"XXX"}' | sed 's/^.\(.*\)/\1/
 paste $sample.novel.exons.2reads.tab temp_p0 temp_p1 temp_p2 | sed 's/(+)//g' | sed 's/(-)//g'  > $sample.novel.exons.2reads.phases.tab
 
 
+
+
+if [[ $6 == "no" ]]
+then
+        echo "Cleaning up temporary output files"
+        rm -rf exon_usage_data
+        rm OLD.*
+
+        #Remove everything that doesn't match this
+        ls -I '*flank2.allExon*bed' -I '*circRNA_candidates.annotated.txt' \
+          -I '*novel.exons.2reads.filter.bed' -I '*novel.exons.2reads.phases.tab' \
+          -I '*novel.cryptic.spliced.exons.txt' -I '*circ_circRNA_exon_usage_length_of_exons.txt' \
+          -I '*introns.uniq.exon_remove.coverage.onlyCirc.novelExonMap.intronCov.bed' \
+          -I '*Potential_multi-round_circRNA.fa' -I '*Potential_multi-round_circRNA.psl.annot*' | xargs rm
+
+else
+        echo "Keeping all of the temporary output files"
+fi
 
 
 #echo "Liftover"
