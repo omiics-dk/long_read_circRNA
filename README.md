@@ -29,13 +29,13 @@ conda env create -f long_read_circRNA.yml
 Or you can build an environment by your self.
 
 ```
-conda create -n long_read_circRNA -c bioconda bedtools samtools pblat nanofilt
+conda create -n long_read_circRNA -c bioconda bedtools=2.29.2 samtools pblat nanofilt
 ```
 
 If perl is not installed on your system you can include perl in the installation:
 
 ```
-conda create -n long_read_circRNA -c bioconda -c conda-forge perl bedtools samtools pblat nanofilt
+conda create -n long_read_circRNA -c bioconda -c conda-forge perl bedtools=2.29.2 samtools pblat nanofilt
 ```
 
 To use the environment you need to activate it afterwards.
