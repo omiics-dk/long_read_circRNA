@@ -127,7 +127,7 @@ rm $sample.scan.circRNA.psl.annot.combine.sort.txt
 echo "Starting the list with number of used exons for each circRNA"
 date
 tmp_dir=$(mktemp -d -t job-XXXXXXXXXX)
-cat $sample.scan.circRNA.psl.genomic-exons.annot.bed | awk 'OFS="\t"{print $13,$14,$15}' | sort -k 1,1 -T /home/mtv/temp/job.$SLURM_JOBID > temp1
+cat $sample.scan.circRNA.psl.genomic-exons.annot.bed | awk 'OFS="\t"{print $13,$14,$15}' | sort -k 1,1 > temp1
 cat temp1 | sort -k 2,2 -T $tmp_dir > temp2
 cat temp2 | sort -k 3,3 -T $tmp_dir | uniq -c > $sample.scan.circRNA.psl.genomic-exons.annot.uniq.bed
 rm -rf temp1 temp2 $tmp_dir
