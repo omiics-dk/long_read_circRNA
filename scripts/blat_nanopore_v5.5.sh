@@ -60,9 +60,9 @@ echo "Sample: "$sample
 echo
 echo "Number of raw reads before NanoFilt -q 7 -l 250"
 zcat $data_folder/$sample.fq.gz | wc -l | awk '{print $1/4}'
-echo
-echo "Dates when reads were sequenced:"
-zcat $data_folder/$sample.fq.gz | grep "start_time=" | sed 's/start_time=/;/g' | cut -d \; -f 2 | sed 's/T/ /g'  | awk '{print $1}'  | sort | uniq -c | sort -nrk 1,1
+#echo
+#echo "Dates when reads were sequenced:"
+#zcat $data_folder/$sample.fq.gz | grep "start_time=" | sed 's/start_time=/;/g' | cut -d \; -f 2 | sed 's/T/ /g'  | awk '{print $1}'  | sort | uniq -c | sort -nrk 1,1
 
 echo
 date
@@ -147,8 +147,30 @@ rm temp.$sample.multi-round.count.txt $sample.temp.read_names
 echo
 date
 echo "Annotating circRNAs and converting to bed6 format"
+
+### Adding split
+echo "  First splitting bed file in 8 to optimize run time"
+bedtools split -n 8 -p $sample.scan.circRNA.psl -a simple -i $sample.scan.circRNA.psl.bed
+
 ## Very time consuming step for large datasets... Converting to bed6 (turning each block from bed12 into a single bed entry). Header is removed using awk
-cat $sample.scan.circRNA.psl.bed | bed12ToBed6 -i stdin | bedtools annotate -names exons est genes -both -i stdin -files $mRNA $exon $est | awk 'NR>1 {print $0}'> $sample.scan.circRNA.psl.annot.bed
+cat $sample.scan.circRNA.psl.00001.bed | bed12ToBed6 -i stdin | bedtools annotate -names exons est genes -both -i stdin -files $mRNA $exon $est | awk 'NR>1 {print $0}'> $sample.scan.circRNA.psl.annot.00001.bed &
+cat $sample.scan.circRNA.psl.00002.bed | bed12ToBed6 -i stdin | bedtools annotate -names exons est genes -both -i stdin -files $mRNA $exon $est | awk 'NR>1 {print $0}'> $sample.scan.circRNA.psl.annot.00002.bed &
+cat $sample.scan.circRNA.psl.00003.bed | bed12ToBed6 -i stdin | bedtools annotate -names exons est genes -both -i stdin -files $mRNA $exon $est | awk 'NR>1 {print $0}'> $sample.scan.circRNA.psl.annot.00003.bed &
+cat $sample.scan.circRNA.psl.00004.bed | bed12ToBed6 -i stdin | bedtools annotate -names exons est genes -both -i stdin -files $mRNA $exon $est | awk 'NR>1 {print $0}'> $sample.scan.circRNA.psl.annot.00004.bed &
+cat $sample.scan.circRNA.psl.00005.bed | bed12ToBed6 -i stdin | bedtools annotate -names exons est genes -both -i stdin -files $mRNA $exon $est | awk 'NR>1 {print $0}'> $sample.scan.circRNA.psl.annot.00005.bed &
+cat $sample.scan.circRNA.psl.00006.bed | bed12ToBed6 -i stdin | bedtools annotate -names exons est genes -both -i stdin -files $mRNA $exon $est | awk 'NR>1 {print $0}'> $sample.scan.circRNA.psl.annot.00006.bed &
+cat $sample.scan.circRNA.psl.00007.bed | bed12ToBed6 -i stdin | bedtools annotate -names exons est genes -both -i stdin -files $mRNA $exon $est | awk 'NR>1 {print $0}'> $sample.scan.circRNA.psl.annot.00007.bed &
+cat $sample.scan.circRNA.psl.00008.bed | bed12ToBed6 -i stdin | bedtools annotate -names exons est genes -both -i stdin -files $mRNA $exon $est | awk 'NR>1 {print $0}'> $sample.scan.circRNA.psl.annot.00008.bed &
+
+wait
+
+cat $sample.scan.circRNA.psl.annot.00001.bed $sample.scan.circRNA.psl.annot.00002.bed $sample.scan.circRNA.psl.annot.00003.bed $sample.scan.circRNA.psl.annot.00004.bed $sample.scan.circRNA.psl.annot.00005.bed $sample.scan.circRNA.psl.annot.00006.bed $sample.scan.circRNA.psl.annot.00007.bed $sample.scan.circRNA.psl.annot.00008.bed > $sample.scan.circRNA.psl.annot.bed
+rm $sample.scan.circRNA.psl.annot.0*.bed
+
+### Done with split
+
+
+
 printf "#chr\tstart\tend\tread_name\tread_length\tgene_coverage\texon_coverage\tEST_coverage\tintron_coverage\n" > $sample.scan.circRNA.psl.annot.txt
 cat $sample.scan.circRNA.psl.annot.bed | sort -k 4,4 -T $temp_sort | awk 'OFS="\t"{print $1,$2,$3,$4,$3-$2,($3-$2)*$8,($3-$2)*$10,($3-$2)*$12,($3-$2)*$8-($3-$2)*$10}' | perl $scriptFolder/combine_annot_segments.pl >> $sample.scan.circRNA.psl.annot.txt
 cat $sample.scan.circRNA.psl.annot.txt | perl $scriptFolder/make_circRNAs_from_annot.txt.pl > $sample.scan.circRNA.psl.annot.combine.txt
