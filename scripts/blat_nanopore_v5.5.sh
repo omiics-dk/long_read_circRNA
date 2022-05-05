@@ -88,10 +88,7 @@ mv $sample.temp.psl $sample.psl
 cat $sample.psl | awk '{print $10}' | sort | uniq -c | sort -nrk 1,1 > mappings_per_read.txt
 cat mappings_per_read.txt | awk '{print $1}' | uniq -c | sort -nrk 1,1 > $sample.histogram_number_of_genomic_hits_per_read.txt
 cat $sample.psl | perl $scriptFolder/psl2bed12.pl | sortBed > $sample.psl.bed
-bedtools bedtobam -i $sample.psl.bed -bed12 -g $genomeSize > $sample.bam
-samtools sort $sample.bam > $sample.sort.bam
-samtools index $sample.sort.bam
-rm $sample.bam
+
 
 echo
 date
@@ -116,9 +113,26 @@ head -5 $sample.scan.psl > $sample.scan.circRNA.psl
 grep circRNA $sample.scan.psl >> $sample.scan.circRNA.psl
 ## converting psl to bed12
 cat $sample.scan.circRNA.psl | perl $scriptFolder/psl2bed12.pl | sortBed > $sample.scan.circRNA.psl.bed
-bedtools bedtobam -i $sample.scan.circRNA.psl.bed -bed12 -g $genomeSize > $sample.scan.circRNA.bam
-samtools sort $sample.scan.circRNA.bam > $sample.scan.circRNA.sort.bam
-samtools index $sample.scan.circRNA.sort.bam
+
+
+
+echo
+echo "Making bam and bigWig (.bw) files for use in genome browsers"
+# All Blat mapped reads
+bedtools bedtobam -i $sample.psl.bed -bed12 -g $genomeSize > $sample.bam
+samtools sort $sample.bam > $sample.sort.bam
+samtools index $sample.sort.bam
+rm $sample.bam
+bamCoverage --binSize 1 --numberOfProcessors 8 -b $sample.sort.bam -o $sample.bw
+
+# Blat mapped BSJ spanning reads
+bedtools bedtobam -i $sample.scan.circRNA.psl.bed -bed12 -g $genomeSize > $sample.circRNA.bam
+samtools sort $sample.circRNA.bam > $sample.circRNA.sort.bam
+samtools index $sample.circRNA.sort.bam
+rm $sample.circRNA.bam
+bamCoverage --binSize 1 --numberOfProcessors 8 -b $sample.circRNA.sort.bam -o $sample.circRNA.bw
+
+
 
 echo
 date
