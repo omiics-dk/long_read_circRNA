@@ -319,7 +319,8 @@ then
           -I '*novel.exons.2reads.filter.bed' -I '*novel.exons.2reads.phases.tab' \
           -I '*novel.cryptic.spliced.exons.txt' -I '*circ_circRNA_exon_usage_length_of_exons.txt' \
           -I '*introns.uniq.exon_remove.coverage.onlyCirc.novelExonMap.intronCov.bed' \
-          -I '*Potential_multi-round_circRNA.fa' -I '*Potential_multi-round_circRNA.psl.annot*' | xargs rm
+          -I '*Potential_multi-round_circRNA.fa' -I '*Potential_multi-round_circRNA.psl.annot*' \
+          -I '*bam' -I '*bai' -I '*bw' | xargs rm
 
 else
         echo "Keeping all of the temporary output files"
