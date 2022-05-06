@@ -33,7 +33,7 @@ elif [ $organism == "mouse" ]
 then
 ### Mouse
 genomeSize=$reference_path/mouse/mm10.chrom.sizes
-fa=$reference_path/mouse/GRCm38.p6.genome_simple.fa
+fa=$reference_path/mouse/Mus_musculus.GRCm38.87.chr-fix.fa
 exon_refseq=$reference_path/mouse/Mouse_refFlat_exon_mm10_Oct2018.sort.bed
 exon_original=$reference_path/mouse/gencode.vM25.annotation.gffread.exon.merge.bed
 exon_full=$reference_path/mouse/gencode.vM25.annotation.gffread.exon.bed
