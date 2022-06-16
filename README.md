@@ -29,13 +29,13 @@ conda env create -f long_read_circRNA.yml
 Or you can build an environment by your self.
 
 ```
-conda create -n long_read_circRNA -c bioconda bedtools=2.29.2 samtools pblat nanofilt
+conda create -n long_read_circRNA -c bioconda bedtools=2.29.2 samtools pblat nanofilt deeptools
 ```
 
 If perl is not installed on your system you can include perl in the installation:
 
 ```
-conda create -n long_read_circRNA -c bioconda -c conda-forge perl bedtools=2.29.2 samtools pblat nanofilt
+conda create -n long_read_circRNA -c bioconda -c conda-forge perl bedtools=2.29.2 samtools pblat nanofilt deeptools
 ```
 
 To use the environment you need to activate it afterwards.
@@ -64,7 +64,7 @@ To view the help message you can run the following command `./long_read_circRNA 
  |____\___/_||_\__, | |_|_\___\__,_\__,_| \__|_|_| \__|_|_\_|\_/_/ \_\ 
                |___/                                                    
 
-Version: v2
+Version: v2.1
 usage: long_read_circRNA <command> [args]
             
 Available subcommands:
@@ -94,7 +94,7 @@ Before running the script, it is a good idea to use the check-installation comma
  |____\___/_||_\__, | |_|_\___\__,_\__,_| \__|_|_| \__|_|_\_|\_/_/ \_\ 
                |___/                                                    
 
-Version: v2
+Version: v2.1
 usage: long_read_circRNA check-installation [args]
 
 Check if environment for running the script is properly setup by checking if
@@ -119,7 +119,7 @@ When the installation is properly installed and you run the check-installation s
  |____\___/_||_\__, | |_|_\___\__,_\__,_| \__|_|_| \__|_|_\_|\_/_/ \_\ 
                |___/                                                    
 
-Version: v2
+Version: v2.1
 
 Checking for bedtools
 Checking for NanoFilt
@@ -140,7 +140,7 @@ Running the `./long_read_circRNA check-installation` when some of the required t
  |____\___/_||_\__, | |_|_\___\__,_\__,_| \__|_|_| \__|_|_\_|\_/_/ \_\ 
                |___/                                                    
 
-Version: v2
+Version: v2.1
 
 Checking for bedtools
         Unable to find bedtools!
@@ -168,7 +168,7 @@ Running `./long_read_circRNA download-data -h` shows different arguments that ca
  |____\___/_||_\__, | |_|_\___\__,_\__,_| \__|_|_| \__|_|_\_|\_/_/ \_\ 
                |___/                                                    
 
-Version: v2
+Version: v2.1
 usage: long_read_circRNA download-data --data-output ./data --test-output ./test_fastq [args]
 
 Download some test data and required reference data for human and mouse
@@ -207,7 +207,7 @@ For running the software you use the run subcommand, and provide a sample `.fq.g
  |____\___/_||_\__, | |_|_\___\__,_\__,_| \__|_|_| \__|_|_\_|\_/_/ \_\ 
                |___/                                                    
 
-Version: v2
+Version: v2.1
 usage: long_read_circRNA [-h] [--reference-path REFERENCE_PATH]
                          [--species {human,mouse}] [--script-path SCRIPT_PATH]
                          [--output-path OUTPUT_PATH] [--dry-run]
