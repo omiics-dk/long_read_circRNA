@@ -280,7 +280,18 @@ mapBed -s -F 1.0 -c 4 -o distinct_only -a $sample.introns.uniq.exon_remove.cover
 
 # List of all unique introns in circRNA regions:
 cat $sample.circRNA_candidates.annotated.txt | grep -v internal_circRNA_name | awk 'OFS="\t"{print $2,$3,$4,$1,$6,$7}' | intersectBed -s -u -a introns.uniq.bed -b - > $sample.all_circRNA_introns.bed
-bedtools map -F 1.0 -c 10 -o max -a $sample.introns.uniq.exon_remove.coverage.onlyCirc.novelExonMap.bed -b $sample.intron.coverage.50pct > $sample.introns.uniq.exon_remove.coverage.onlyCirc.novelExonMap.intronCov.bed
+
+# This is a workaround for the bedtools >=2.30.0 error "***** ERROR: illegal number "1.0000000". Exiting..."
+# By adding a 13th column we make sure bedtools does not assumes this is a valid BED12 file
+# Bedtool's internal check will otherwise fail due to the float number at column 10 which is supposed to be an integer
+# see https://github.com/arq5x/bedtools2/issues/981 for details
+
+# old bedtools command was: bedtools map -F 1.0 -c 10 -o max -a $sample.introns.uniq.exon_remove.coverage.onlyCirc.novelExonMap.bed -b $sample.intron.coverage.50pct > $sample.introns.uniq.exon_remove.coverage.onlyCirc.novelExonMap.intronCov.bed
+
+awk 'OFS="\t" {$13="."; print $0}' $sample.introns.uniq.exon_remove.coverage.onlyCirc.novelExonMap.bed  > $sample.introns.uniq.exon_remove.coverage.onlyCirc.novelExonMap.fixed.bed
+
+bedtools map -F 1.0 -c 10 -o max -a $sample.introns.uniq.exon_remove.coverage.onlyCirc.novelExonMap.fixed.bed -b $sample.intron.coverage.50pct > $sample.introns.uniq.exon_remove.coverage.onlyCirc.novelExonMap.intronCov.bed
+
 echo
 echo "Number of introns"
 wc -l $intron_ucsc introns.uniq.bed introns.uniq.exon_remove.bed $sample.introns.uniq.exon_remove.coverage.bed $sample.introns.uniq.exon_remove.coverage.circ.bed $sample.introns.uniq.exon_remove.coverage.onlyCirc.bed $sample.introns.uniq.exon_remove.coverage.onlyCirc.novelExonMap.bed $sample.all_circRNA_introns.bed
