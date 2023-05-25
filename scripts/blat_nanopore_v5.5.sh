@@ -280,7 +280,7 @@ grep -Fwf circBase.no_exon_match_reads_circIDs.txt $circBase > $sample.circBase_
 # Getting the genome coordinates from circAtlas from the no-exon aligning reads
 grep -Fwf circAtlas.no_exon_match_reads_circIDs.txt $circAtlas >> $sample.circBase_no_exon_match_reads.bed
 # Getting the genome coordinates from CIRCpedia from the no-exon aligning reads
-grep -Fwf CIRCpedia.no_exon_match_reads_circIDs.txt $circBase >> $sample.circBase_no_exon_match_reads.bed
+grep -Fwf CIRCpedia.no_exon_match_reads_circIDs.txt $CIRCpedia >> $sample.circBase_no_exon_match_reads.bed
 cat $sample.circBase_no_exon_match_reads.bed | sortBed > temp
 mv temp $sample.circBase_no_exon_match_reads.bed
 
